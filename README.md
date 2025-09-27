@@ -40,6 +40,8 @@ Jedes Match wird als einzelne JSON-Datei unter `data/<matchId>.json` abgelegt. S
 
 Die Startseite von `index.php` liefert jetzt ein modernes Dashboard, das die gespeicherten Matches aus dem `data/`-Ordner direkt im Browser aufbereitet. Highlights:
 
+* **Bestzeiten-Ranking** – Ein eigener Tab wertet Renn-Modi aus, erkennt Bestzeiten pro Spieler/Map und sortiert sie automatisch.
+
 * **Filter nach Spielmodus** – Die verfügbaren Modi werden automatisch aus den vorhandenen JSON-Dateien ermittelt.
 * **Suche nach Match-ID, Map oder Spielern** – Sofortige Filterung während der Eingabe.
 * **Modus-Verteilung & Kennzahlen** – Karten zeigen Gesamtanzahl, letzte Aktualisierung sowie erkannte Spieler.
