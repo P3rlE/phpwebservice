@@ -646,6 +646,7 @@ try {
     <section class="panel tabbed-panel">
       <div class="tab-header" role="tablist" aria-label="Ansichten" data-i18n-aria-label="tabs.label">
         <button class="tab-button active" id="tab-button-leaderboard" role="tab" aria-selected="true" aria-controls="tab-leaderboard" data-tab="leaderboard" data-i18n="tabs.bestTimes">Bestzeiten</button>
+        <button class="tab-button" id="tab-button-deathmatch" role="tab" aria-selected="false" aria-controls="tab-deathmatch" data-tab="deathmatch" data-i18n="tabs.deathmatch">K/D-Bestenliste</button>
         <button class="tab-button" id="tab-button-matches" role="tab" aria-selected="false" aria-controls="tab-matches" data-tab="matches" data-i18n="tabs.matches">Matchübersicht</button>
       </div>
 
@@ -685,6 +686,46 @@ try {
           </table>
         </div>
         <p class="empty-state" id="leaderboardEmpty" hidden></p>
+      </div>
+
+      <div class="tab-panel" id="tab-deathmatch" role="tabpanel" aria-labelledby="tab-button-deathmatch">
+        <div class="controls leaderboard-controls">
+          <div>
+            <label for="deathmatchModeFilter" data-i18n="filters.deathmatch.mode.label">Spielmodus</label>
+            <select id="deathmatchModeFilter">
+              <option value="__all" data-i18n="filters.deathmatch.mode.all">Alle Deathmatch-Modi</option>
+            </select>
+          </div>
+          <div>
+            <label for="deathmatchMapFilter" data-i18n="filters.deathmatch.map.label">Map</label>
+            <select id="deathmatchMapFilter">
+              <option value="__all" data-i18n="filters.deathmatch.map.all">Alle Maps</option>
+            </select>
+          </div>
+          <div>
+            <label for="deathmatchPlayerSearch" data-i18n="filters.deathmatch.player.label">Spielersuche</label>
+            <input type="search" id="deathmatchPlayerSearch" placeholder="Spielername…" autocomplete="off" data-i18n-placeholder="filters.deathmatch.player.placeholder">
+          </div>
+        </div>
+        <p class="status" id="deathmatchStatus"></p>
+        <div class="table-wrapper" aria-live="polite">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th scope="col" data-i18n="deathmatch.headers.rank">Rang</th>
+                <th scope="col" data-i18n="deathmatch.headers.player">Spieler</th>
+                <th scope="col" data-i18n="deathmatch.headers.kdr">K/D</th>
+                <th scope="col" data-i18n="deathmatch.headers.kills">Kills</th>
+                <th scope="col" data-i18n="deathmatch.headers.deaths">Deaths</th>
+                <th scope="col" data-i18n="deathmatch.headers.map">Map</th>
+                <th scope="col" data-i18n="deathmatch.headers.mode">Modus</th>
+                <th scope="col" data-i18n="deathmatch.headers.recorded">Aufgestellt am</th>
+              </tr>
+            </thead>
+            <tbody id="deathmatchBody"></tbody>
+          </table>
+        </div>
+        <p class="empty-state" id="deathmatchEmpty" hidden></p>
       </div>
 
       <div class="tab-panel" id="tab-matches" role="tabpanel" aria-labelledby="tab-button-matches">
@@ -751,6 +792,7 @@ try {
         'language.enLabel': 'Englisch',
         'tabs.label': 'Ansichten',
         'tabs.bestTimes': 'Bestzeiten',
+        'tabs.deathmatch': 'K/D-Bestenliste',
         'tabs.matches': 'Matchübersicht',
         'stats.matches': 'Matches',
         'stats.lastUpdate': 'Letztes Update',
@@ -762,6 +804,12 @@ try {
         'filters.leaderboard.map.all': 'Alle Maps',
         'filters.leaderboard.player.label': 'Spielersuche',
         'filters.leaderboard.player.placeholder': 'Spielername…',
+        'filters.deathmatch.mode.label': 'Spielmodus',
+        'filters.deathmatch.mode.all': 'Alle Deathmatch-Modi',
+        'filters.deathmatch.map.label': 'Map',
+        'filters.deathmatch.map.all': 'Alle Maps',
+        'filters.deathmatch.player.label': 'Spielersuche',
+        'filters.deathmatch.player.placeholder': 'Spielername…',
         'filters.matches.mode.label': 'Spielmodus',
         'filters.matches.mode.all': 'Alle Modi',
         'filters.matches.search.label': 'Suche',
@@ -774,6 +822,14 @@ try {
         'leaderboard.headers.map': 'Map',
         'leaderboard.headers.mode': 'Modus',
         'leaderboard.headers.recorded': 'Aufgestellt am',
+        'deathmatch.headers.rank': 'Rang',
+        'deathmatch.headers.player': 'Spieler',
+        'deathmatch.headers.kdr': 'K/D',
+        'deathmatch.headers.kills': 'Kills',
+        'deathmatch.headers.deaths': 'Tode',
+        'deathmatch.headers.map': 'Map',
+        'deathmatch.headers.mode': 'Modus',
+        'deathmatch.headers.recorded': 'Aufgestellt am',
         'leaderboard.status.waiting': 'Warte auf Daten…',
         'leaderboard.status.loading': 'Lade Bestzeiten…',
         'leaderboard.status.noneData': 'Keine Renn-Daten in den geladenen Matches gefunden.',
@@ -784,6 +840,16 @@ try {
         'leaderboard.empty.noFilterMatches': 'Keine Ergebnisse passend zu den aktuellen Filtern.',
         'leaderboard.matchId.title': 'Match-ID',
         'leaderboard.meta.recorded': 'Aufgestellt am',
+        'deathmatch.status.waiting': 'Warte auf Daten…',
+        'deathmatch.status.loading': 'Lade K/D-Werte…',
+        'deathmatch.status.noneData': 'Keine Deathmatch-Daten in den geladenen Matches gefunden.',
+        'deathmatch.status.noFilterMatches': 'Keine Ergebnisse für die aktuellen Filter.',
+        'deathmatch.status.count': '{displayed} von {total} K/D-Werten angezeigt.',
+        'deathmatch.status.error': 'Fehler beim Laden: {message}',
+        'deathmatch.empty.noData': 'Keine K/D-Werte gefunden. Lade weitere Deathmatch-Matches oder passe die Filter an.',
+        'deathmatch.empty.noFilterMatches': 'Keine Ergebnisse passend zu den aktuellen Filtern.',
+        'deathmatch.matchId.title': 'Match-ID',
+        'deathmatch.meta.recorded': 'Aufgestellt am',
         'status.loadingMatches': 'Lade Matches…',
         'status.noMatches': 'Keine Matches gespeichert.',
         'status.lastUpdated': 'Letzte Aktualisierung: {timestamp}',
@@ -818,6 +884,7 @@ try {
         'language.enLabel': 'English',
         'tabs.label': 'Views',
         'tabs.bestTimes': 'Best times',
+        'tabs.deathmatch': 'K/D leaderboard',
         'tabs.matches': 'Match overview',
         'stats.matches': 'Matches',
         'stats.lastUpdate': 'Last update',
@@ -829,6 +896,12 @@ try {
         'filters.leaderboard.map.all': 'All maps',
         'filters.leaderboard.player.label': 'Player search',
         'filters.leaderboard.player.placeholder': 'Player name…',
+        'filters.deathmatch.mode.label': 'Game mode',
+        'filters.deathmatch.mode.all': 'All deathmatch modes',
+        'filters.deathmatch.map.label': 'Map',
+        'filters.deathmatch.map.all': 'All maps',
+        'filters.deathmatch.player.label': 'Player search',
+        'filters.deathmatch.player.placeholder': 'Player name…',
         'filters.matches.mode.label': 'Game mode',
         'filters.matches.mode.all': 'All modes',
         'filters.matches.search.label': 'Search',
@@ -841,6 +914,14 @@ try {
         'leaderboard.headers.map': 'Map',
         'leaderboard.headers.mode': 'Mode',
         'leaderboard.headers.recorded': 'Set on',
+        'deathmatch.headers.rank': 'Rank',
+        'deathmatch.headers.player': 'Player',
+        'deathmatch.headers.kdr': 'K/D ratio',
+        'deathmatch.headers.kills': 'Kills',
+        'deathmatch.headers.deaths': 'Deaths',
+        'deathmatch.headers.map': 'Map',
+        'deathmatch.headers.mode': 'Mode',
+        'deathmatch.headers.recorded': 'Set on',
         'leaderboard.status.waiting': 'Waiting for data…',
         'leaderboard.status.loading': 'Loading best times…',
         'leaderboard.status.noneData': 'No racing data found in the loaded matches.',
@@ -851,6 +932,16 @@ try {
         'leaderboard.empty.noFilterMatches': 'No results match the current filters.',
         'leaderboard.matchId.title': 'Match ID',
         'leaderboard.meta.recorded': 'Recorded on',
+        'deathmatch.status.waiting': 'Waiting for data…',
+        'deathmatch.status.loading': 'Loading K/D records…',
+        'deathmatch.status.noneData': 'No deathmatch data found in the loaded matches.',
+        'deathmatch.status.noFilterMatches': 'No results for the current filters.',
+        'deathmatch.status.count': 'Showing {displayed} of {total} K/D records.',
+        'deathmatch.status.error': 'Load error: {message}',
+        'deathmatch.empty.noData': 'No K/D records found. Upload more deathmatch matches or adjust the filters.',
+        'deathmatch.empty.noFilterMatches': 'No results match the current filters.',
+        'deathmatch.matchId.title': 'Match ID',
+        'deathmatch.meta.recorded': 'Recorded on',
         'status.loadingMatches': 'Loading matches…',
         'status.noMatches': 'No matches stored.',
         'status.lastUpdated': 'Last refreshed: {timestamp}',
@@ -879,34 +970,37 @@ try {
 
     const MODE_TRANSLATIONS = {
       de: {
-        'GT_RACING': 'Rennen',
-        'GT_RACING_DM': 'Deathmatch Rennen',
-        'GT_DERBY': 'Demolition Derby',
-        'GT_LCS': 'Last Car Standing',
-        'GT_ELIMINATION': 'Elimination',
-        'GT_DEATHMATCH': 'Deathmatch'
-        'GT_TEAM': 'Team Deathmatch'
-        'GT_TEAM_RACING': 'Team Racing'
-        'GT_TEAM_RACING_DM': 'Team Racing Deathmatch'
-        'GT_CTF': 'Capture the Flag'
-        'GT_CTF4': '4-Teams-CTF'
-        'GT_DOMINATION': 'Domination'
+        gt_racing: 'Rennen',
+        gt_racing_dm: 'Deathmatch Rennen',
+        gt_derby: 'Demolition Derby',
+        gt_lcs: 'Last Car Standing',
+        gt_elimination: 'Elimination',
+        gt_deathmatch: 'Deathmatch',
+        gt_team: 'Team Deathmatch',
+        gt_team_racing: 'Team Racing',
+        gt_team_racing_dm: 'Team Racing Deathmatch',
+        gt_ctf: 'Capture the Flag',
+        gt_ctf4: '4-Teams-CTF',
+        gt_domination: 'Domination'
       },
       en: {
-        'GT_RACING': 'Racing',
-        'GT_RACING_DM': 'Racing Deathmatch',
-        'GT_DERBY': 'Demolition Derby',
-        'GT_LCS': 'Last Car Standing',
-        'GT_ELIMINATION': 'Elimination',
-        'GT_DEATHMATCH': 'Deathmatch'
-        'GT_TEAM': 'Team Deathmatch'
-        'GT_TEAM_RACING': 'Team Racing'
-        'GT_TEAM_RACING_DM': 'Team Racing Deathmatch'
-        'GT_CTF': 'Capture the Flag'
-        'GT_CTF4': '4-Teams-CTF'
-        'GT_DOMINATION': 'Domination'
+        gt_racing: 'Racing',
+        gt_racing_dm: 'Racing Deathmatch',
+        gt_derby: 'Demolition Derby',
+        gt_lcs: 'Last Car Standing',
+        gt_elimination: 'Elimination',
+        gt_deathmatch: 'Deathmatch',
+        gt_team: 'Team Deathmatch',
+        gt_team_racing: 'Team Racing',
+        gt_team_racing_dm: 'Team Racing Deathmatch',
+        gt_ctf: 'Capture the Flag',
+        gt_ctf4: '4-Team CTF',
+        gt_domination: 'Domination'
       }
     };
+
+    const RACE_MODE_KEYS = new Set(['gt_racing', 'gt_racing_dm', 'gt_team_racing', 'gt_team_racing_dm']);
+    const DEATHMATCH_MODE_KEYS = new Set(['gt_deathmatch']);
 
     const state = {
       allMatches: [],
@@ -914,11 +1008,14 @@ try {
       limit: 50,
       leaderboard: [],
       filteredLeaderboard: [],
+      deathmatchLeaderboard: [],
+      filteredDeathmatchLeaderboard: [],
       activeTab: 'leaderboard',
       language: 'de',
       statuses: {
         overview: { key: null, params: {}, isError: false },
-        leaderboard: { key: null, params: {}, isError: false }
+        leaderboard: { key: null, params: {}, isError: false },
+        deathmatch: { key: null, params: {}, isError: false }
       }
 
     };
@@ -942,9 +1039,16 @@ try {
       leaderboardModeFilter: document.getElementById('leaderboardModeFilter'),
       leaderboardMapFilter: document.getElementById('leaderboardMapFilter'),
       leaderboardPlayerSearch: document.getElementById('leaderboardPlayerSearch'),
+      deathmatchStatus: document.getElementById('deathmatchStatus'),
+      deathmatchBody: document.getElementById('deathmatchBody'),
+      deathmatchEmpty: document.getElementById('deathmatchEmpty'),
+      deathmatchModeFilter: document.getElementById('deathmatchModeFilter'),
+      deathmatchMapFilter: document.getElementById('deathmatchMapFilter'),
+      deathmatchPlayerSearch: document.getElementById('deathmatchPlayerSearch'),
       tabButtons: Array.from(document.querySelectorAll('[data-tab]')),
       tabPanels: {
         leaderboard: document.getElementById('tab-leaderboard'),
+        deathmatch: document.getElementById('tab-deathmatch'),
         matches: document.getElementById('tab-matches')
 
       },
@@ -1045,6 +1149,9 @@ try {
       if (state.statuses.leaderboard.key) {
         setLeaderboardStatus(state.statuses.leaderboard.key, state.statuses.leaderboard.params, state.statuses.leaderboard.isError, false);
       }
+      if (state.statuses.deathmatch.key) {
+        setDeathmatchStatus(state.statuses.deathmatch.key, state.statuses.deathmatch.params, state.statuses.deathmatch.isError, false);
+      }
     }
 
     function applyLanguage(lang) {
@@ -1069,6 +1176,14 @@ try {
       } else {
         elements.leaderboardBody.innerHTML = '';
         elements.leaderboardEmpty.hidden = true;
+      }
+      buildDeathmatchLeaderboard();
+      updateDeathmatchFilters();
+      if (state.deathmatchLeaderboard.length) {
+        applyDeathmatchFilters();
+      } else {
+        elements.deathmatchBody.innerHTML = '';
+        elements.deathmatchEmpty.hidden = true;
       }
       if (state.allMatches.length) {
         applyFilters();
@@ -1161,6 +1276,29 @@ try {
 
     const MAX_REASONABLE_TIME = 6 * 3600; // 6 Stunden
 
+    const KILL_PATH_CANDIDATES = [
+      'kills',
+      'frags',
+      'stats.kills',
+      'stats.frags',
+      'result.kills',
+      'result.frags',
+      'summary.kills',
+      'summary.frags',
+      'totals.kills',
+      'totals.frags'
+    ];
+
+    const DEATH_PATH_CANDIDATES = [
+      'deaths',
+      'death',
+      'stats.deaths',
+      'stats.death',
+      'result.deaths',
+      'summary.deaths',
+      'totals.deaths'
+    ];
+
 
     function setStatus(key, params = {}, isError = false, persist = true) {
       const message = formatMessage(key, params);
@@ -1177,6 +1315,16 @@ try {
       elements.leaderboardStatus.classList.toggle('error', Boolean(isError));
       if (persist) {
         state.statuses.leaderboard = { key, params, isError };
+      }
+
+    }
+
+    function setDeathmatchStatus(key, params = {}, isError = false, persist = true) {
+      const message = formatMessage(key, params);
+      elements.deathmatchStatus.textContent = message;
+      elements.deathmatchStatus.classList.toggle('error', Boolean(isError));
+      if (persist) {
+        state.statuses.deathmatch = { key, params, isError };
       }
 
     }
@@ -1225,6 +1373,70 @@ try {
         }
       }
       return [];
+    }
+
+    function parseNumericValue(value) {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === 'string') {
+        const normalized = value.trim().replace(',', '.');
+        if (normalized === '') {
+          return null;
+        }
+        const numeric = Number(normalized);
+        return Number.isFinite(numeric) ? numeric : null;
+      }
+      return null;
+    }
+
+    function numericAtPaths(obj, paths) {
+      for (const path of paths) {
+        const value = valueAtPath(obj, path);
+        const numeric = parseNumericValue(value);
+        if (numeric !== null) {
+          return numeric;
+        }
+      }
+      return null;
+    }
+
+    function searchNumericByKeywords(node, keywords, visited = new Set()) {
+      if (node === null || node === undefined) {
+        return null;
+      }
+      if (typeof node !== 'object') {
+        return null;
+      }
+      if (visited.has(node)) {
+        return null;
+      }
+      visited.add(node);
+      if (Array.isArray(node)) {
+        for (const item of node) {
+          const result = searchNumericByKeywords(item, keywords, visited);
+          if (result !== null) {
+            return result;
+          }
+        }
+        return null;
+      }
+      for (const [key, value] of Object.entries(node)) {
+        const lowerKey = key.toLowerCase();
+        if (keywords.some((keyword) => lowerKey.includes(keyword))) {
+          const numeric = parseNumericValue(value);
+          if (numeric !== null) {
+            return numeric;
+          }
+        }
+        if (value && typeof value === 'object') {
+          const nested = searchNumericByKeywords(value, keywords, visited);
+          if (nested !== null) {
+            return nested;
+          }
+        }
+      }
+      return null;
     }
 
     function parseDate(value) {
@@ -1647,36 +1859,88 @@ try {
       return `${minutes}:${secs.toString().padStart(2, '0')}.${millisStr}`;
     }
 
+    function formatRatio(value) {
+      if (!Number.isFinite(value)) {
+        return '–';
+      }
+      const precision = value >= 10 ? 2 : 3;
+      let fixed = value.toFixed(precision);
+      if (fixed.includes('.')) {
+        fixed = fixed.replace(/0+$/, '').replace(/\.$/, '');
+      }
+      return fixed;
+    }
+
+    function formatCount(value) {
+      if (!Number.isFinite(value)) {
+        return '–';
+      }
+      if (Number.isInteger(value)) {
+        return value.toString();
+      }
+      let fixed = value.toFixed(2);
+      if (fixed.includes('.')) {
+        fixed = fixed.replace(/0+$/, '').replace(/\.$/, '');
+      }
+      return fixed;
+    }
+
+    function extractScoreboardEntries(match) {
+      const entries = [];
+      const seen = new Set();
+      for (const path of SCOREBOARD_PATHS) {
+        const value = valueAtPath(match, path);
+        if (!Array.isArray(value) || value.length === 0) {
+          continue;
+        }
+        for (const item of value) {
+          if (item && typeof item === 'object') {
+            if (seen.has(item)) {
+              continue;
+            }
+            seen.add(item);
+          }
+          entries.push(item);
+        }
+      }
+      return entries;
+    }
+
+    function extractKillDeath(entry) {
+      if (!entry || typeof entry !== 'object') {
+        return { kills: null, deaths: null };
+      }
+      let kills = numericAtPaths(entry, KILL_PATH_CANDIDATES);
+      let deaths = numericAtPaths(entry, DEATH_PATH_CANDIDATES);
+      if (kills === null) {
+        kills = searchNumericByKeywords(entry, ['kill', 'frag']);
+      }
+      if (deaths === null) {
+        deaths = searchNumericByKeywords(entry, ['death']);
+      }
+      if (kills === null && deaths === null) {
+        return { kills: null, deaths: null };
+      }
+      const safeKills = Math.max(0, kills ?? 0);
+      const safeDeaths = Math.max(0, deaths ?? 0);
+      return { kills: safeKills, deaths: safeDeaths };
+    }
+
     function buildLeaderboard() {
       const bestByKey = new Map();
 
       for (const match of state.allMatches) {
-        const entries = [];
-        const seen = new Set();
-
-        for (const path of SCOREBOARD_PATHS) {
-          const value = valueAtPath(match, path);
-          if (!Array.isArray(value) || value.length === 0) {
-            continue;
-          }
-          for (const item of value) {
-            if (item && typeof item === 'object') {
-              if (seen.has(item)) {
-                continue;
-              }
-              seen.add(item);
-            }
-            entries.push(item);
-          }
+        const rawMode = extractMode(match);
+        const modeKey = canonicalMode(rawMode);
+        if (!RACE_MODE_KEYS.has(modeKey)) {
+          continue;
         }
 
+        const entries = extractScoreboardEntries(match);
         if (entries.length === 0) {
           continue;
         }
 
-
-        const rawMode = extractMode(match);
-        const modeKey = canonicalMode(rawMode);
         const modeLabel = humanizeMode(rawMode);
 
         const map = extractMap(match);
@@ -1734,6 +1998,86 @@ try {
         return a.player.localeCompare(b.player, locale);
 
       });
+      state.filteredLeaderboard = state.leaderboard.slice();
+    }
+
+    function buildDeathmatchLeaderboard() {
+      const bestByKey = new Map();
+
+      for (const match of state.allMatches) {
+        const rawMode = extractMode(match);
+        const modeKey = canonicalMode(rawMode);
+        if (!DEATHMATCH_MODE_KEYS.has(modeKey)) {
+          continue;
+        }
+
+        const entries = extractScoreboardEntries(match);
+        if (entries.length === 0) {
+          continue;
+        }
+
+        const modeLabel = humanizeMode(rawMode);
+        const map = extractMap(match);
+        const mapKey = map.toLowerCase();
+        const matchId = extractMatchId(match);
+        const startedAt = extractStart(match);
+        const recordedAt = extractRecordedAtFromMatchId(matchId);
+
+        for (const entry of entries) {
+          const player = extractLeaderboardPlayer(entry);
+          if (!player) {
+            continue;
+          }
+          const { kills, deaths } = extractKillDeath(entry);
+          if (kills === null && deaths === null) {
+            continue;
+          }
+          const safeKills = kills ?? 0;
+          const safeDeaths = deaths ?? 0;
+          const ratio = safeKills / Math.max(1, safeDeaths);
+          if (!Number.isFinite(ratio)) {
+            continue;
+          }
+          const key = `${modeKey}||${mapKey}||${player.toLowerCase()}`;
+          const current = bestByKey.get(key);
+          const shouldUpdate =
+            !current ||
+            ratio > current.ratio ||
+            (ratio === current.ratio && safeKills > current.kills) ||
+            (ratio === current.ratio && safeKills === current.kills && safeDeaths < current.deaths);
+          if (shouldUpdate) {
+            bestByKey.set(key, {
+              player,
+              playerLower: player.toLowerCase(),
+              ratio,
+              kills: safeKills,
+              deaths: safeDeaths,
+              map,
+              mapKey,
+              mode: modeLabel,
+              modeKey,
+              matchId,
+              startedAt,
+              recordedAt
+            });
+          }
+        }
+      }
+
+      const locale = getLocale();
+      state.deathmatchLeaderboard = Array.from(bestByKey.values()).sort((a, b) => {
+        if (b.ratio !== a.ratio) {
+          return b.ratio - a.ratio;
+        }
+        if (b.kills !== a.kills) {
+          return b.kills - a.kills;
+        }
+        if (a.deaths !== b.deaths) {
+          return a.deaths - b.deaths;
+        }
+        return a.player.localeCompare(b.player, locale);
+      });
+      state.filteredDeathmatchLeaderboard = state.deathmatchLeaderboard.slice();
     }
 
     function populateSelect(select, defaultLabel, optionsMap, previousValue) {
@@ -1794,6 +2138,34 @@ try {
       }
     }
 
+    function updateDeathmatchFilters() {
+      const previousMode = elements.deathmatchModeFilter.value;
+      const previousMap = elements.deathmatchMapFilter.value;
+
+      const modeOptions = new Map();
+      const mapOptions = new Map();
+
+      for (const entry of state.deathmatchLeaderboard) {
+        if (!modeOptions.has(entry.modeKey)) {
+          modeOptions.set(entry.modeKey, entry.mode);
+        }
+        if (!mapOptions.has(entry.mapKey)) {
+          mapOptions.set(entry.mapKey, entry.map);
+        }
+      }
+
+      populateSelect(elements.deathmatchModeFilter, t('filters.deathmatch.mode.all'), modeOptions, previousMode);
+      populateSelect(elements.deathmatchMapFilter, t('filters.deathmatch.map.all'), mapOptions, previousMap);
+
+      const hasEntries = state.deathmatchLeaderboard.length > 0;
+      elements.deathmatchModeFilter.disabled = !hasEntries;
+      elements.deathmatchMapFilter.disabled = !hasEntries;
+      elements.deathmatchPlayerSearch.disabled = !hasEntries;
+      if (!hasEntries) {
+        elements.deathmatchPlayerSearch.value = '';
+      }
+    }
+
     function applyLeaderboardFilters() {
       const mode = elements.leaderboardModeFilter.value;
       const map = elements.leaderboardMapFilter.value;
@@ -1813,6 +2185,27 @@ try {
       });
 
       renderLeaderboard();
+    }
+
+    function applyDeathmatchFilters() {
+      const mode = elements.deathmatchModeFilter.value;
+      const map = elements.deathmatchMapFilter.value;
+      const playerTerm = elements.deathmatchPlayerSearch.value.trim().toLowerCase();
+
+      state.filteredDeathmatchLeaderboard = state.deathmatchLeaderboard.filter((entry) => {
+        if (mode !== '__all' && entry.modeKey !== mode) {
+          return false;
+        }
+        if (map !== '__all' && entry.mapKey !== map) {
+          return false;
+        }
+        if (playerTerm && !entry.playerLower.includes(playerTerm)) {
+          return false;
+        }
+        return true;
+      });
+
+      renderDeathmatchLeaderboard();
     }
 
     function renderLeaderboard() {
@@ -1877,6 +2270,68 @@ try {
 
       setLeaderboardStatus('leaderboard.status.count', { displayed: rows.length, total: state.leaderboard.length });
 
+    }
+
+    function renderDeathmatchLeaderboard() {
+      const rows = state.filteredDeathmatchLeaderboard;
+      const hasEntries = state.deathmatchLeaderboard.length > 0;
+
+      elements.deathmatchBody.innerHTML = '';
+
+      if (!hasEntries) {
+        elements.deathmatchEmpty.hidden = false;
+        elements.deathmatchEmpty.textContent = t('deathmatch.empty.noData');
+        setDeathmatchStatus('deathmatch.status.noneData');
+        return;
+      }
+
+      if (!rows.length) {
+        elements.deathmatchEmpty.hidden = false;
+        elements.deathmatchEmpty.textContent = t('deathmatch.empty.noFilterMatches');
+        setDeathmatchStatus('deathmatch.status.noFilterMatches');
+        return;
+      }
+
+      elements.deathmatchEmpty.hidden = true;
+      const markup = rows
+        .map((entry, index) => {
+          const rank = index + 1;
+          const recordDate = entry.recordedAt || entry.startedAt;
+          const dateLabel = recordDate ? formatter.format(recordDate) : '–';
+          const matchIdLabel = entry.matchId && entry.matchId !== t('common.unknown') ? entry.matchId : '';
+          const matchIdHtml = matchIdLabel
+            ? `<span class="mono" title="${escapeHtml(t('deathmatch.matchId.title'))}">${escapeHtml(matchIdLabel)}</span>`
+            : '';
+
+          return `
+          <tr>
+            <td>${rank}</td>
+            <td>
+              <div class="leaderboard-player">
+                <strong>${escapeHtml(entry.player)}</strong>
+              </div>
+            </td>
+            <td>${escapeHtml(formatRatio(entry.ratio))}</td>
+            <td>${escapeHtml(formatCount(entry.kills))}</td>
+            <td>${escapeHtml(formatCount(entry.deaths))}</td>
+            <td>${escapeHtml(entry.map)}</td>
+            <td>${escapeHtml(entry.mode)}</td>
+            <td>
+              <div class="meta">
+                <span>${escapeHtml(dateLabel)}</span>
+                ${matchIdHtml}
+              </div>
+            </td>
+          </tr>
+        `;
+        })
+        .join('');
+
+      elements.deathmatchBody.innerHTML = markup;
+      setDeathmatchStatus('deathmatch.status.count', {
+        displayed: rows.length,
+        total: state.deathmatchLeaderboard.length
+      });
     }
 
     function updateModeFilter() {
@@ -2085,6 +2540,7 @@ try {
 
       setStatus('status.loadingMatches');
       setLeaderboardStatus('leaderboard.status.loading');
+      setDeathmatchStatus('deathmatch.status.loading');
 
       elements.refreshButton.disabled = true;
       try {
@@ -2109,6 +2565,10 @@ try {
         updateLeaderboardFilters();
         applyLeaderboardFilters();
 
+        buildDeathmatchLeaderboard();
+        updateDeathmatchFilters();
+        applyDeathmatchFilters();
+
         applyFilters();
       } catch (error) {
         console.error(error);
@@ -2118,13 +2578,18 @@ try {
 
         state.leaderboard = [];
         state.filteredLeaderboard = [];
+        state.deathmatchLeaderboard = [];
+        state.filteredDeathmatchLeaderboard = [];
         updateModeFilter();
         updateSummary();
         updateLeaderboardFilters();
         renderLeaderboard();
+        updateDeathmatchFilters();
+        renderDeathmatchLeaderboard();
         applyFilters();
 
         setLeaderboardStatus('leaderboard.status.error', { message: error.message }, true);
+        setDeathmatchStatus('deathmatch.status.error', { message: error.message }, true);
 
       } finally {
         elements.refreshButton.disabled = false;
@@ -2185,6 +2650,18 @@ try {
       applyLeaderboardFilters();
     });
 
+    elements.deathmatchModeFilter.addEventListener('change', () => {
+      applyDeathmatchFilters();
+    });
+
+    elements.deathmatchMapFilter.addEventListener('change', () => {
+      applyDeathmatchFilters();
+    });
+
+    elements.deathmatchPlayerSearch.addEventListener('input', () => {
+      applyDeathmatchFilters();
+    });
+
     elements.modeFilter.addEventListener('change', () => {
       applyFilters();
     });
@@ -2220,6 +2697,7 @@ try {
     applyLanguage(state.language);
     setStatus('status.loadingMatches');
     setLeaderboardStatus('leaderboard.status.waiting');
+    setDeathmatchStatus('deathmatch.status.waiting');
     setActiveTab(state.activeTab);
 
     loadMatches();
