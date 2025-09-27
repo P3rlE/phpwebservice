@@ -42,6 +42,7 @@ Die Startseite von `index.php` liefert jetzt ein modernes Dashboard, das die ges
 
 * **Bestzeiten-Ranking** – Ein eigener Tab wertet Renn-Modi aus, erkennt Bestzeiten pro Spieler/Map und sortiert sie automatisch.
 
+
 * **Filter nach Spielmodus** – Die verfügbaren Modi werden automatisch aus den vorhandenen JSON-Dateien ermittelt.
 * **Suche nach Match-ID, Map oder Spielern** – Sofortige Filterung während der Eingabe.
 * **Modus-Verteilung & Kennzahlen** – Karten zeigen Gesamtanzahl, letzte Aktualisierung sowie erkannte Spieler.

@@ -132,7 +132,6 @@ try {
       align-items: end;
     }
 
-
     .tabbed-panel {
       display: flex;
       flex-direction: column;
@@ -254,7 +253,6 @@ try {
         min-width: 100%;
       }
     }
-
 
     label {
       display: block;
@@ -580,7 +578,8 @@ try {
                 <th scope="col">Bestzeit</th>
                 <th scope="col">Map</th>
                 <th scope="col">Modus</th>
-                <th scope="col">Match</th>
+
+                <th scope="col">Aufgestellt am</th>
               </tr>
             </thead>
             <tbody id="leaderboardBody"></tbody>
@@ -623,34 +622,6 @@ try {
         </noscript>
 
       </div>
-      <div>
-        <label for="limitSelect">Lade-Limit</label>
-        <select id="limitSelect">
-          <option value="25">25</option>
-          <option value="50" selected>50</option>
-          <option value="100">100</option>
-          <option value="250">250</option>
-          <option value="500">500</option>
-        </select>
-      </div>
-      <div>
-        <label>&nbsp;</label>
-        <button id="refreshButton" type="button">Aktualisieren</button>
-        <p class="status" id="statusMessage">Lade Matches…</p>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2 style="margin:0; font-size:1.05rem; letter-spacing:0.02em; text-transform:uppercase; color:var(--text-muted);">Modus-Verteilung</h2>
-      <ul id="modeBreakdown"></ul>
-    </section>
-
-    <section class="panel">
-      <h2 style="margin:0 0 18px; font-size:1.2rem;">Match-Archiv</h2>
-      <div id="matches" aria-live="polite"></div>
-      <noscript>
-        <p class="empty-state">Bitte JavaScript aktivieren, um die gespeicherten Matches anzeigen zu können.</p>
-      </noscript>
     </section>
 
     <section class="panel">
@@ -952,6 +923,39 @@ try {
       ]) || 'Unbekannt';
     }
 
+
+    function extractRecordedAtFromMatchId(matchId) {
+      if (typeof matchId !== 'string') {
+        return null;
+      }
+
+      const digits = matchId.replace(/\D+/g, '');
+      if (digits.length < 12) {
+        return null;
+      }
+
+      const year = Number(digits.slice(0, 4));
+      const month = Number(digits.slice(4, 6)) - 1;
+      const day = Number(digits.slice(6, 8));
+      const hour = Number(digits.slice(8, 10));
+      const minute = Number(digits.slice(10, 12));
+      const second = digits.length >= 14 ? Number(digits.slice(12, 14)) : 0;
+
+      if (
+        [year, month, day, hour, minute, second].some((part) => Number.isNaN(part)) ||
+        month < 0 || month > 11 ||
+        day < 1 || day > 31 ||
+        hour > 23 ||
+        minute > 59 ||
+        second > 59
+      ) {
+        return null;
+      }
+
+      const candidate = new Date(year, month, day, hour, minute, second);
+      return Number.isNaN(candidate.getTime()) ? null : candidate;
+    }
+
     function extractPlayers(match) {
       const candidates = pickArray(match, [
         'players',
@@ -987,8 +991,42 @@ try {
         .replaceAll("'", '&#039;');
     }
 
+
+    const MODE_TRANSLATIONS = {
+      'gt_racing': 'Racing',
+      'gt_quickrace': 'Quickrace',
+      'gt_timeattack': 'Time Attack',
+      'gt_championship': 'Championship',
+      'gt_duel': 'Duel',
+      'gt_capture': 'Capture the Flag'
+    };
+
     function canonicalMode(mode) {
-      return mode.toLowerCase();
+      if (typeof mode !== 'string') {
+        return '__unknown__';
+      }
+      return mode.trim().toLowerCase();
+    }
+
+    function humanizeMode(mode) {
+      if (typeof mode !== 'string') {
+        return 'Unbekannt';
+      }
+
+      const trimmed = mode.trim();
+      if (!trimmed) {
+        return 'Unbekannt';
+      }
+
+      const key = trimmed.toLowerCase();
+      if (Object.prototype.hasOwnProperty.call(MODE_TRANSLATIONS, key)) {
+        return MODE_TRANSLATIONS[key];
+      }
+
+      const withoutPrefix = trimmed.replace(/^GT[_\-\s]?/i, '');
+      const normalized = withoutPrefix.replace(/[_\-]+/g, ' ').toLowerCase();
+      return normalized.replace(/(^|\s)([a-zäöüß])/g, (match, prefix, char) => prefix + char.toUpperCase());
+
     }
 
     function isReasonableRaceTime(seconds) {
@@ -1216,12 +1254,18 @@ try {
           continue;
         }
 
-        const mode = extractMode(match);
-        const modeKey = canonicalMode(mode);
+
+        const rawMode = extractMode(match);
+        const modeKey = canonicalMode(rawMode);
+        const modeLabel = humanizeMode(rawMode);
+
         const map = extractMap(match);
         const mapKey = map.toLowerCase();
         const matchId = extractMatchId(match);
         const startedAt = extractStart(match);
+
+        const recordedAt = extractRecordedAtFromMatchId(matchId);
+
 
         for (const entry of entries) {
           const player = extractLeaderboardPlayer(entry);
@@ -1242,10 +1286,13 @@ try {
               time: seconds,
               map,
               mapKey,
-              mode,
+
+              mode: modeLabel,
               modeKey,
               matchId,
               startedAt,
+              recordedAt,
+
               vehicle
             });
           }
@@ -1361,8 +1408,13 @@ try {
       elements.leaderboardEmpty.hidden = true;
       const markup = rows.map((entry, index) => {
         const rank = index + 1;
-        const dateLabel = entry.startedAt ? formatter.format(entry.startedAt) : '–';
+
+        const recordDate = entry.recordedAt || entry.startedAt;
+        const dateLabel = recordDate ? formatter.format(recordDate) : '–';
         const vehicle = entry.vehicle ? `<span>${escapeHtml(entry.vehicle)}</span>` : '';
+        const matchIdLabel = entry.matchId && entry.matchId !== 'Unbekannt' ? entry.matchId : '';
+        const matchIdHtml = matchIdLabel ? `<span class="mono" title="Match-ID">${escapeHtml(matchIdLabel)}</span>` : '';
+
         return `
           <tr>
             <td>${rank}</td>
@@ -1377,8 +1429,10 @@ try {
             <td>${escapeHtml(entry.mode)}</td>
             <td>
               <div class="meta">
-                <span class="mono">${escapeHtml(entry.matchId)}</span>
+
                 <span>${escapeHtml(dateLabel)}</span>
+                ${matchIdHtml}
+
               </div>
             </td>
           </tr>
@@ -1396,7 +1450,9 @@ try {
         const mode = extractMode(match);
         const key = canonicalMode(mode);
         if (!options.has(key)) {
-          options.set(key, mode);
+
+          options.set(key, humanizeMode(mode));
+
         }
       }
 
@@ -1433,7 +1489,11 @@ try {
       state.allMatches.forEach((match) => {
         const mode = extractMode(match);
         const key = canonicalMode(mode);
-        const current = breakdown.get(key) || { label: mode, count: 0 };
+
+        const label = humanizeMode(mode);
+        const current = breakdown.get(key) || { label, count: 0 };
+        current.label = label;
+
         current.count += 1;
         breakdown.set(key, current);
       });
@@ -1455,7 +1515,10 @@ try {
       }
 
       state.filteredMatches.forEach((match) => {
-        const mode = extractMode(match);
+
+        const rawMode = extractMode(match);
+        const modeLabel = humanizeMode(rawMode);
+
         const mapName = extractMap(match);
         const duration = extractDuration(match);
         const matchId = extractMatchId(match);
@@ -1467,7 +1530,9 @@ try {
 
         const summary = document.createElement('summary');
         summary.innerHTML = `
-          <span class="mode-badge">${escapeHtml(mode)}</span>
+
+          <span class="mode-badge">${escapeHtml(modeLabel)}</span>
+
           <div class="summary-meta">
             <span><strong>${escapeHtml(mapName)}</strong>Map</span>
             <span><strong>${escapeHtml(matchId)}</strong>ID</span>
@@ -1530,9 +1595,13 @@ try {
         matches = matches.filter((match) => {
           const mapName = extractMap(match).toLowerCase();
           const matchId = extractMatchId(match).toLowerCase();
-          const mode = extractMode(match).toLowerCase();
+
+          const rawMode = extractMode(match);
+          const mode = rawMode.toLowerCase();
+          const modeLabel = humanizeMode(rawMode).toLowerCase();
           const players = extractPlayers(match).map((name) => name.toLowerCase());
-          return [mapName, matchId, mode, ...players].some((value) => value.includes(term));
+          return [mapName, matchId, mode, modeLabel, ...players].some((value) => value.includes(term));
+
         });
       }
 
@@ -1597,7 +1666,6 @@ try {
       }
     }
 
-
     function setActiveTab(tab) {
       if (!elements.tabPanels[tab]) {
         return;
@@ -1641,7 +1709,6 @@ try {
     elements.leaderboardPlayerSearch.addEventListener('input', () => {
       applyLeaderboardFilters();
     });
-
 
     elements.modeFilter.addEventListener('change', () => {
       applyFilters();
