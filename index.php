@@ -77,10 +77,30 @@ try {
     }
 
     .hero {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 22px;
+
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .hero-brand {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .hero-info {
+      display: flex;
+      flex-direction: column;
+
     }
 
     .hero img {
@@ -103,26 +123,75 @@ try {
       margin: 0;
       color: var(--text-muted);
       line-height: 1.6;
+
+      max-width: 52ch;
     }
 
-    .hero dl {
-      margin: 0;
+    .language-toggle {
+      display: inline-flex;
+      gap: 10px;
+      padding: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .language-button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
       display: grid;
-      gap: 6px 18px;
-      grid-template-columns: repeat(2, auto);
-      justify-content: end;
-      text-align: right;
-      font-size: 0.95rem;
+      place-items: center;
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
     }
 
-    .hero dt {
+    .language-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .language-button.active {
+      box-shadow: inset 0 0 0 2px rgba(93, 139, 255, 0.55);
+      background: rgba(93, 139, 255, 0.18);
+    }
+
+    .hero-stats {
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .hero-stats .stat {
+      min-width: 140px;
+      padding: 14px 18px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .hero-stats dt {
       color: var(--text-muted);
       font-weight: 500;
+      margin: 0;
+      font-size: 0.9rem;
     }
 
-    .hero dd {
+    .hero-stats dd {
       margin: 0;
       font-weight: 600;
+      font-size: 1.15rem;
     }
 
     .controls {
@@ -505,13 +574,33 @@ try {
         padding: 24px 14px 38px;
       }
 
-      .hero {
-        grid-template-columns: 1fr;
+
+      .hero-top {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .hero-brand {
+        width: 100%;
+        justify-content: center;
         text-align: center;
       }
 
-      .hero dl {
+      .hero-info {
+        align-items: center;
+        text-align: center;
+      }
+
+      .language-toggle {
+        align-self: center;
+      }
+
+      .hero-stats {
         justify-content: center;
+      }
+
+      .hero-stats .stat {
+
         text-align: center;
       }
 
@@ -529,79 +618,91 @@ try {
 <body>
   <main class="page">
     <section class="panel hero">
-      <img src="logo.png" alt="Q3Rally Logo" onerror="this.style.display='none'">
-      <div>
-        <h1>Q3Rally Ladder Monitor</h1>
 
-        <p>Direkte Vorschau aller gespeicherten Matches aus dem <code>data/</code>-Ordner. Vergleiche Bestzeiten aus Renn-Modi oder filtere in der Matchübersicht nach Maps, IDs und Spielern – inklusive vollständiger JSON-Details.</p>
+      <div class="hero-top">
+        <div class="hero-brand">
+          <img src="logo.png" alt="Q3Rally Logo" onerror="this.style.display='none'">
+          <div class="hero-info">
+            <h1 data-i18n="hero.title">Q3Rally Ladder Monitor</h1>
+            <p data-i18n-html="hero.description">Direkte Vorschau aller gespeicherten Matches aus dem <code>data/</code>-Ordner. Vergleiche Bestzeiten aus Renn-Modi oder filtere in der Matchübersicht nach Maps, IDs und Spielern – inklusive vollständiger JSON-Details.</p>
+          </div>
+        </div>
+        <div class="language-toggle" role="group" aria-label="Sprachauswahl" data-i18n-aria-label="language.toggleLabel">
+          <button class="language-button active" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel">🇩🇪</button>
+          <button class="language-button" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel">🇬🇧</button>
+
+        </div>
+        <p class="empty-state" id="leaderboardEmpty" hidden>Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.</p>
       </div>
-      <dl>
-        <div><dt>Matches</dt><dd id="stat-total">–</dd></div>
-        <div><dt>Letztes Update</dt><dd id="stat-last">–</dd></div>
-        <div><dt>Spielmodi</dt><dd id="stat-modes">–</dd></div>
-        <div><dt>Spieler erfasst</dt><dd id="stat-players">–</dd></div>
+
+      <dl class="hero-stats">
+        <div class="stat"><dt data-i18n="stats.matches">Matches</dt><dd id="stat-total">–</dd></div>
+        <div class="stat"><dt data-i18n="stats.lastUpdate">Letztes Update</dt><dd id="stat-last">–</dd></div>
+        <div class="stat"><dt data-i18n="stats.modes">Spielmodi</dt><dd id="stat-modes">–</dd></div>
+        <div class="stat"><dt data-i18n="stats.players">Spieler erfasst</dt><dd id="stat-players">–</dd></div>
       </dl>
     </section>
 
     <section class="panel tabbed-panel">
-      <div class="tab-header" role="tablist" aria-label="Ansichten">
-        <button class="tab-button active" id="tab-button-leaderboard" role="tab" aria-selected="true" aria-controls="tab-leaderboard" data-tab="leaderboard">Bestzeiten</button>
-        <button class="tab-button" id="tab-button-matches" role="tab" aria-selected="false" aria-controls="tab-matches" data-tab="matches">Matchübersicht</button>
+      <div class="tab-header" role="tablist" aria-label="Ansichten" data-i18n-aria-label="tabs.label">
+        <button class="tab-button active" id="tab-button-leaderboard" role="tab" aria-selected="true" aria-controls="tab-leaderboard" data-tab="leaderboard" data-i18n="tabs.bestTimes">Bestzeiten</button>
+        <button class="tab-button" id="tab-button-matches" role="tab" aria-selected="false" aria-controls="tab-matches" data-tab="matches" data-i18n="tabs.matches">Matchübersicht</button>
       </div>
 
       <div class="tab-panel active" id="tab-leaderboard" role="tabpanel" aria-labelledby="tab-button-leaderboard">
         <div class="controls leaderboard-controls">
           <div>
-            <label for="leaderboardModeFilter">Spielmodus</label>
+            <label for="leaderboardModeFilter" data-i18n="filters.leaderboard.mode.label">Spielmodus</label>
             <select id="leaderboardModeFilter">
-              <option value="__all">Alle Renn-Modi</option>
+              <option value="__all" data-i18n="filters.leaderboard.mode.all">Alle Renn-Modi</option>
             </select>
           </div>
           <div>
-            <label for="leaderboardMapFilter">Map</label>
+            <label for="leaderboardMapFilter" data-i18n="filters.leaderboard.map.label">Map</label>
             <select id="leaderboardMapFilter">
-              <option value="__all">Alle Maps</option>
+              <option value="__all" data-i18n="filters.leaderboard.map.all">Alle Maps</option>
             </select>
           </div>
           <div>
-            <label for="leaderboardPlayerSearch">Spielersuche</label>
-            <input type="search" id="leaderboardPlayerSearch" placeholder="Spielername…" autocomplete="off">
+            <label for="leaderboardPlayerSearch" data-i18n="filters.leaderboard.player.label">Spielersuche</label>
+            <input type="search" id="leaderboardPlayerSearch" placeholder="Spielername…" autocomplete="off" data-i18n-placeholder="filters.leaderboard.player.placeholder">
           </div>
         </div>
-        <p class="status" id="leaderboardStatus">Warte auf Daten…</p>
+        <p class="status" id="leaderboardStatus"></p>
         <div class="table-wrapper" aria-live="polite">
           <table class="leaderboard-table">
             <thead>
               <tr>
-                <th scope="col">Rang</th>
-                <th scope="col">Spieler</th>
-                <th scope="col">Bestzeit</th>
-                <th scope="col">Map</th>
-                <th scope="col">Modus</th>
-
-                <th scope="col">Aufgestellt am</th>
+                <th scope="col" data-i18n="leaderboard.headers.rank">Rang</th>
+                <th scope="col" data-i18n="leaderboard.headers.player">Spieler</th>
+                <th scope="col" data-i18n="leaderboard.headers.best">Bestzeit</th>
+                <th scope="col" data-i18n="leaderboard.headers.map">Map</th>
+                <th scope="col" data-i18n="leaderboard.headers.mode">Modus</th>
+                <th scope="col" data-i18n="leaderboard.headers.recorded">Aufgestellt am</th>
               </tr>
             </thead>
             <tbody id="leaderboardBody"></tbody>
           </table>
         </div>
-        <p class="empty-state" id="leaderboardEmpty" hidden>Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.</p>
+        <p class="empty-state" id="leaderboardEmpty" hidden></p>
       </div>
 
       <div class="tab-panel" id="tab-matches" role="tabpanel" aria-labelledby="tab-button-matches">
         <div class="controls match-controls">
           <div>
-            <label for="modeFilter">Spielmodus</label>
+
+            <label for="modeFilter" data-i18n="filters.matches.mode.label">Spielmodus</label>
             <select id="modeFilter">
-              <option value="__all">Alle Modi</option>
+              <option value="__all" data-i18n="filters.matches.mode.all">Alle Modi</option>
             </select>
           </div>
           <div>
-            <label for="searchInput">Suche</label>
-            <input type="search" id="searchInput" placeholder="Match-ID, Map oder Spieler…" autocomplete="off">
+            <label for="searchInput" data-i18n="filters.matches.search.label">Suche</label>
+            <input type="search" id="searchInput" placeholder="Match-ID, Map oder Spieler…" autocomplete="off" data-i18n-placeholder="filters.matches.search.placeholder">
           </div>
           <div>
-            <label for="limitSelect">Lade-Limit</label>
+            <label for="limitSelect" data-i18n="filters.matches.limit.label">Lade-Limit</label>
+
             <select id="limitSelect">
               <option value="25">25</option>
               <option value="50" selected>50</option>
@@ -612,20 +713,25 @@ try {
           </div>
           <div>
             <label>&nbsp;</label>
-            <button id="refreshButton" type="button">Aktualisieren</button>
-            <p class="status" id="statusMessage">Lade Matches…</p>
+
+            <button id="refreshButton" type="button" data-i18n="filters.matches.refresh">Aktualisieren</button>
+            <p class="status" id="statusMessage"></p>
+
           </div>
         </div>
         <div id="matches" aria-live="polite"></div>
         <noscript>
-          <p class="empty-state">Bitte JavaScript aktivieren, um die gespeicherten Matches anzeigen zu können.</p>
+
+          <p class="empty-state" data-i18n="noscript.message">Bitte JavaScript aktivieren, um die gespeicherten Matches anzeigen zu können.</p>
         </noscript>
 
       </div>
     </section>
 
     <section class="panel">
-      <h2 style="margin:0; font-size:1.05rem; letter-spacing:0.02em; text-transform:uppercase; color:var(--text-muted);">Modus-Verteilung</h2>
+
+      <h2 style="margin:0; font-size:1.05rem; letter-spacing:0.02em; text-transform:uppercase; color:var(--text-muted);" data-i18n="breakdown.heading">Modus-Verteilung</h2>
+
       <ul id="modeBreakdown"></ul>
     </section>
   </main>
@@ -633,14 +739,175 @@ try {
   <script>
     const API_BASE = <?= json_encode($apiBase, JSON_UNESCAPED_SLASHES); ?>;
 
+
+    const I18N = {
+      de: {
+        'meta.title': 'Q3Rally Ladder Monitor',
+        'meta.description': 'Frontend zur Auswertung der gespeicherten Q3Rally-Ladder-Matches.',
+        'hero.title': 'Q3Rally Ladder Monitor',
+        'hero.description': 'Direkte Vorschau aller gespeicherten Matches aus dem <code>data/</code>-Ordner. Vergleiche Bestzeiten aus Renn-Modi oder filtere in der Matchübersicht nach Maps, IDs und Spielern – inklusive vollständiger JSON-Details.',
+        'language.toggleLabel': 'Sprachauswahl',
+        'language.deLabel': 'Deutsch',
+        'language.enLabel': 'Englisch',
+        'tabs.label': 'Ansichten',
+        'tabs.bestTimes': 'Bestzeiten',
+        'tabs.matches': 'Matchübersicht',
+        'stats.matches': 'Matches',
+        'stats.lastUpdate': 'Letztes Update',
+        'stats.modes': 'Spielmodi',
+        'stats.players': 'Spieler erfasst',
+        'filters.leaderboard.mode.label': 'Spielmodus',
+        'filters.leaderboard.mode.all': 'Alle Renn-Modi',
+        'filters.leaderboard.map.label': 'Map',
+        'filters.leaderboard.map.all': 'Alle Maps',
+        'filters.leaderboard.player.label': 'Spielersuche',
+        'filters.leaderboard.player.placeholder': 'Spielername…',
+        'filters.matches.mode.label': 'Spielmodus',
+        'filters.matches.mode.all': 'Alle Modi',
+        'filters.matches.search.label': 'Suche',
+        'filters.matches.search.placeholder': 'Match-ID, Map oder Spieler…',
+        'filters.matches.limit.label': 'Lade-Limit',
+        'filters.matches.refresh': 'Aktualisieren',
+        'leaderboard.headers.rank': 'Rang',
+        'leaderboard.headers.player': 'Spieler',
+        'leaderboard.headers.best': 'Bestzeit',
+        'leaderboard.headers.map': 'Map',
+        'leaderboard.headers.mode': 'Modus',
+        'leaderboard.headers.recorded': 'Aufgestellt am',
+        'leaderboard.status.waiting': 'Warte auf Daten…',
+        'leaderboard.status.loading': 'Lade Bestzeiten…',
+        'leaderboard.status.noneData': 'Keine Renn-Daten in den geladenen Matches gefunden.',
+        'leaderboard.status.noFilterMatches': 'Keine Ergebnisse für die aktuellen Filter.',
+        'leaderboard.status.count': '{displayed} von {total} Bestzeiten angezeigt.',
+        'leaderboard.status.error': 'Fehler beim Laden: {message}',
+        'leaderboard.empty.noData': 'Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.',
+        'leaderboard.empty.noFilterMatches': 'Keine Ergebnisse passend zu den aktuellen Filtern.',
+        'leaderboard.matchId.title': 'Match-ID',
+        'leaderboard.meta.recorded': 'Aufgestellt am',
+        'status.loadingMatches': 'Lade Matches…',
+        'status.noMatches': 'Keine Matches gespeichert.',
+        'status.lastUpdated': 'Letzte Aktualisierung: {timestamp}',
+        'status.error': 'Fehler beim Laden: {message}',
+        'matches.empty': 'Keine Matches gefunden. Passe die Filter an oder lade neue Daten.',
+        'matches.summary.mapLabel': 'Map',
+        'matches.summary.idLabel': 'ID',
+        'matches.summary.startLabel': 'Start',
+        'matches.summary.durationLabel': 'Dauer',
+        'matches.summary.playersTitle': 'Spielerzahl',
+        'matches.meta.server': 'Server',
+        'matches.meta.version': 'Version',
+        'matches.meta.recorded': 'Aufgenommen',
+        'matches.meta.size': 'Dateigröße',
+        'matches.players.heading': 'Spieler ({count})',
+        'matches.players.empty': 'Keine Spielerinformationen vorhanden.',
+        'matches.status.error': 'Fehler beim Laden: {message}',
+        'errors.unexpectedResponse': 'Unerwartete Antwort des Servers.',
+        'breakdown.heading': 'Modus-Verteilung',
+        'breakdown.empty': 'Keine Daten vorhanden.',
+        'noscript.message': 'Bitte JavaScript aktivieren, um die gespeicherten Matches anzeigen zu können.',
+        'mode.unknown': 'Unbekannt',
+        'common.unknown': 'Unbekannt'
+      },
+      en: {
+        'meta.title': 'Q3Rally Ladder Monitor',
+        'meta.description': 'Frontend for exploring the stored Q3Rally ladder matches.',
+        'hero.title': 'Q3Rally Ladder Monitor',
+        'hero.description': 'Live preview of every stored match from the <code>data/</code> folder. Compare best racing times or filter the match overview by maps, IDs, and players – complete with full JSON details.',
+        'language.toggleLabel': 'Language selection',
+        'language.deLabel': 'German',
+        'language.enLabel': 'English',
+        'tabs.label': 'Views',
+        'tabs.bestTimes': 'Best times',
+        'tabs.matches': 'Match overview',
+        'stats.matches': 'Matches',
+        'stats.lastUpdate': 'Last update',
+        'stats.modes': 'Game modes',
+        'stats.players': 'Players tracked',
+        'filters.leaderboard.mode.label': 'Game mode',
+        'filters.leaderboard.mode.all': 'All racing modes',
+        'filters.leaderboard.map.label': 'Map',
+        'filters.leaderboard.map.all': 'All maps',
+        'filters.leaderboard.player.label': 'Player search',
+        'filters.leaderboard.player.placeholder': 'Player name…',
+        'filters.matches.mode.label': 'Game mode',
+        'filters.matches.mode.all': 'All modes',
+        'filters.matches.search.label': 'Search',
+        'filters.matches.search.placeholder': 'Match ID, map, or player…',
+        'filters.matches.limit.label': 'Load limit',
+        'filters.matches.refresh': 'Refresh',
+        'leaderboard.headers.rank': 'Rank',
+        'leaderboard.headers.player': 'Player',
+        'leaderboard.headers.best': 'Best time',
+        'leaderboard.headers.map': 'Map',
+        'leaderboard.headers.mode': 'Mode',
+        'leaderboard.headers.recorded': 'Set on',
+        'leaderboard.status.waiting': 'Waiting for data…',
+        'leaderboard.status.loading': 'Loading best times…',
+        'leaderboard.status.noneData': 'No racing data found in the loaded matches.',
+        'leaderboard.status.noFilterMatches': 'No results for the current filters.',
+        'leaderboard.status.count': 'Showing {displayed} of {total} best times.',
+        'leaderboard.status.error': 'Load error: {message}',
+        'leaderboard.empty.noData': 'No best times found. Upload more racing matches or adjust the filters.',
+        'leaderboard.empty.noFilterMatches': 'No results match the current filters.',
+        'leaderboard.matchId.title': 'Match ID',
+        'leaderboard.meta.recorded': 'Recorded on',
+        'status.loadingMatches': 'Loading matches…',
+        'status.noMatches': 'No matches stored.',
+        'status.lastUpdated': 'Last refreshed: {timestamp}',
+        'status.error': 'Load error: {message}',
+        'matches.empty': 'No matches found. Adjust the filters or upload new data.',
+        'matches.summary.mapLabel': 'Map',
+        'matches.summary.idLabel': 'ID',
+        'matches.summary.startLabel': 'Start',
+        'matches.summary.durationLabel': 'Duration',
+        'matches.summary.playersTitle': 'Player count',
+        'matches.meta.server': 'Server',
+        'matches.meta.version': 'Version',
+        'matches.meta.recorded': 'Recorded',
+        'matches.meta.size': 'File size',
+        'matches.players.heading': 'Players ({count})',
+        'matches.players.empty': 'No player information available.',
+        'matches.status.error': 'Load error: {message}',
+        'errors.unexpectedResponse': 'Unexpected server response.',
+        'breakdown.heading': 'Mode distribution',
+        'breakdown.empty': 'No data available.',
+        'noscript.message': 'Please enable JavaScript to display the stored matches.',
+        'mode.unknown': 'Unknown',
+        'common.unknown': 'Unknown'
+      }
+    };
+
+    const MODE_TRANSLATIONS = {
+      de: {
+        'gt_racing': 'Rennen',
+        'gt_quickrace': 'Schnellrennen',
+        'gt_timeattack': 'Zeitfahren',
+        'gt_championship': 'Meisterschaft',
+        'gt_duel': 'Duell',
+        'gt_capture': 'Capture the Flag'
+      },
+      en: {
+        'gt_racing': 'Racing',
+        'gt_quickrace': 'Quickrace',
+        'gt_timeattack': 'Time Attack',
+        'gt_championship': 'Championship',
+        'gt_duel': 'Duel',
+        'gt_capture': 'Capture the Flag'
+      }
+    };
+
     const state = {
       allMatches: [],
       filteredMatches: [],
-
       limit: 50,
       leaderboard: [],
       filteredLeaderboard: [],
-      activeTab: 'leaderboard'
+      activeTab: 'leaderboard',
+      language: 'de',
+      statuses: {
+        overview: { key: null, params: {}, isError: false },
+        leaderboard: { key: null, params: {}, isError: false }
+      }
 
     };
 
@@ -667,14 +934,137 @@ try {
       tabPanels: {
         leaderboard: document.getElementById('tab-leaderboard'),
         matches: document.getElementById('tab-matches')
-      }
 
+      },
+      languageButtons: Array.from(document.querySelectorAll('.language-button')),
+      html: document.documentElement,
+      metaDescription: document.querySelector('meta[name="description"]')
     };
 
-    const formatter = new Intl.DateTimeFormat('de-DE', {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    });
+    function getLocale(lang = state.language) {
+      return lang === 'de' ? 'de-DE' : 'en-US';
+    }
+
+    function createFormatter(lang = state.language) {
+      return new Intl.DateTimeFormat(getLocale(lang), {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      });
+    }
+
+    let formatter = createFormatter();
+
+    function translateWithFallback(key, lang = state.language) {
+      const primary = I18N[lang] || {};
+      if (Object.prototype.hasOwnProperty.call(primary, key)) {
+        return primary[key];
+      }
+      if (lang !== 'en' && I18N.en && Object.prototype.hasOwnProperty.call(I18N.en, key)) {
+        return I18N.en[key];
+      }
+      if (lang !== 'de' && I18N.de && Object.prototype.hasOwnProperty.call(I18N.de, key)) {
+        return I18N.de[key];
+      }
+      return key;
+    }
+
+    function t(key, params = {}) {
+      const template = translateWithFallback(key);
+      if (typeof template !== 'string') {
+        return key;
+      }
+      return template.replace(/\{(\w+)\}/g, (match, token) => {
+        if (Object.prototype.hasOwnProperty.call(params, token)) {
+          return String(params[token]);
+        }
+        return match;
+      });
+    }
+
+    function applyStaticTranslations() {
+      document.querySelectorAll('[data-i18n]').forEach((element) => {
+        const key = element.dataset.i18n;
+        if (key) {
+          element.textContent = t(key);
+        }
+      });
+      document.querySelectorAll('[data-i18n-html]').forEach((element) => {
+        const key = element.dataset.i18nHtml;
+        if (key) {
+          element.innerHTML = t(key);
+        }
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach((element) => {
+        const key = element.dataset.i18nPlaceholder;
+        if (key) {
+          element.setAttribute('placeholder', t(key));
+        }
+      });
+      document.querySelectorAll('[data-i18n-title]').forEach((element) => {
+        const key = element.dataset.i18nTitle;
+        if (key) {
+          element.setAttribute('title', t(key));
+        }
+      });
+      document.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
+        const key = element.dataset.i18nAriaLabel;
+        if (key) {
+          element.setAttribute('aria-label', t(key));
+        }
+      });
+    }
+
+    function updateLanguageButtons() {
+      elements.languageButtons.forEach((button) => {
+        const isActive = button.dataset.lang === state.language;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-pressed', String(isActive));
+      });
+    }
+
+    function formatMessage(key, params = {}) {
+      return t(key, params);
+    }
+
+    function syncStatuses() {
+      if (state.statuses.overview.key) {
+        setStatus(state.statuses.overview.key, state.statuses.overview.params, state.statuses.overview.isError, false);
+      }
+      if (state.statuses.leaderboard.key) {
+        setLeaderboardStatus(state.statuses.leaderboard.key, state.statuses.leaderboard.params, state.statuses.leaderboard.isError, false);
+      }
+    }
+
+    function applyLanguage(lang) {
+      if (!I18N[lang]) {
+        lang = 'de';
+      }
+      state.language = lang;
+      elements.html.lang = lang === 'de' ? 'de' : 'en';
+      formatter = createFormatter(lang);
+      document.title = t('meta.title');
+      if (elements.metaDescription) {
+        elements.metaDescription.setAttribute('content', t('meta.description'));
+      }
+      applyStaticTranslations();
+      updateLanguageButtons();
+      updateModeFilter();
+      updateSummary();
+      buildLeaderboard();
+      updateLeaderboardFilters();
+      if (state.leaderboard.length) {
+        applyLeaderboardFilters();
+      } else {
+        elements.leaderboardBody.innerHTML = '';
+        elements.leaderboardEmpty.hidden = true;
+      }
+      if (state.allMatches.length) {
+        applyFilters();
+      } else {
+        elements.matches.innerHTML = '';
+      }
+      syncStatuses();
+    }
 
 
     const TIME_PATH_CANDIDATES = [
@@ -760,15 +1150,23 @@ try {
     const MAX_REASONABLE_TIME = 6 * 3600; // 6 Stunden
 
 
-    function setStatus(message, isError = false) {
+    function setStatus(key, params = {}, isError = false, persist = true) {
+      const message = formatMessage(key, params);
       elements.statusMessage.textContent = message;
       elements.statusMessage.classList.toggle('error', Boolean(isError));
+      if (persist) {
+        state.statuses.overview = { key, params, isError };
+      }
     }
 
-
-    function setLeaderboardStatus(message, isError = false) {
+    function setLeaderboardStatus(key, params = {}, isError = false, persist = true) {
+      const message = formatMessage(key, params);
       elements.leaderboardStatus.textContent = message;
       elements.leaderboardStatus.classList.toggle('error', Boolean(isError));
+      if (persist) {
+        state.statuses.leaderboard = { key, params, isError };
+      }
+
     }
 
     function valueAtPath(obj, path) {
@@ -857,7 +1255,9 @@ try {
         'rules.mode',
         'meta.mode',
         'type'
-      ]) || 'Unbekannt';
+
+      ]) || '__unknown__';
+
     }
 
     function extractMap(match) {
@@ -914,13 +1314,17 @@ try {
     }
 
     function extractMatchId(match) {
-      return firstString(match, [
+
+      const id = firstString(match, [
+
         'matchId',
         'id',
         'match.id',
         'identifier',
         'metadata.id'
-      ]) || 'Unbekannt';
+
+      ]);
+      return id || t('common.unknown');
     }
 
 
@@ -992,40 +1396,44 @@ try {
     }
 
 
-    const MODE_TRANSLATIONS = {
-      'gt_racing': 'Racing',
-      'gt_quickrace': 'Quickrace',
-      'gt_timeattack': 'Time Attack',
-      'gt_championship': 'Championship',
-      'gt_duel': 'Duel',
-      'gt_capture': 'Capture the Flag'
-    };
-
     function canonicalMode(mode) {
       if (typeof mode !== 'string') {
         return '__unknown__';
       }
-      return mode.trim().toLowerCase();
+
+      const trimmed = mode.trim();
+      if (!trimmed) {
+        return '__unknown__';
+      }
+      return trimmed.toLowerCase();
+
     }
 
     function humanizeMode(mode) {
       if (typeof mode !== 'string') {
-        return 'Unbekannt';
+
+        return t('mode.unknown');
+
       }
 
       const trimmed = mode.trim();
       if (!trimmed) {
-        return 'Unbekannt';
+
+        return t('mode.unknown');
       }
 
       const key = trimmed.toLowerCase();
-      if (Object.prototype.hasOwnProperty.call(MODE_TRANSLATIONS, key)) {
-        return MODE_TRANSLATIONS[key];
+      const translations = MODE_TRANSLATIONS[state.language] || {};
+      if (Object.prototype.hasOwnProperty.call(translations, key)) {
+        return translations[key];
+
       }
 
       const withoutPrefix = trimmed.replace(/^GT[_\-\s]?/i, '');
       const normalized = withoutPrefix.replace(/[_\-]+/g, ' ').toLowerCase();
-      return normalized.replace(/(^|\s)([a-zäöüß])/g, (match, prefix, char) => prefix + char.toUpperCase());
+
+      const locale = getLocale();
+      return normalized.replace(/(^|\s)([\p{L}])/gu, (match, prefix, char) => prefix + char.toLocaleUpperCase(locale));
 
     }
 
@@ -1299,15 +1707,20 @@ try {
         }
       }
 
+
+      const locale = getLocale();
+
       state.leaderboard = Array.from(bestByKey.values()).sort((a, b) => {
         if (a.time !== b.time) {
           return a.time - b.time;
         }
-        const mapCompare = a.map.localeCompare(b.map, 'de');
+
+        const mapCompare = a.map.localeCompare(b.map, locale);
         if (mapCompare !== 0) {
           return mapCompare;
         }
-        return a.player.localeCompare(b.player, 'de');
+        return a.player.localeCompare(b.player, locale);
+
       });
     }
 
@@ -1318,7 +1731,10 @@ try {
       defaultOption.textContent = defaultLabel;
       fragment.appendChild(defaultOption);
 
-      const sorted = Array.from(optionsMap.entries()).sort((a, b) => a[1].localeCompare(b[1], 'de'));
+
+      const locale = getLocale();
+      const sorted = Array.from(optionsMap.entries()).sort((a, b) => a[1].localeCompare(b[1], locale));
+
       for (const [value, label] of sorted) {
         const option = document.createElement('option');
         option.value = value;
@@ -1352,8 +1768,10 @@ try {
         }
       }
 
-      populateSelect(elements.leaderboardModeFilter, 'Alle Renn-Modi', modeOptions, previousMode);
-      populateSelect(elements.leaderboardMapFilter, 'Alle Maps', mapOptions, previousMap);
+
+      populateSelect(elements.leaderboardModeFilter, t('filters.leaderboard.mode.all'), modeOptions, previousMode);
+      populateSelect(elements.leaderboardMapFilter, t('filters.leaderboard.map.all'), mapOptions, previousMap);
+
 
       const hasEntries = state.leaderboard.length > 0;
       elements.leaderboardModeFilter.disabled = !hasEntries;
@@ -1393,15 +1811,19 @@ try {
 
       if (!hasEntries) {
         elements.leaderboardEmpty.hidden = false;
-        elements.leaderboardEmpty.textContent = 'Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.';
-        setLeaderboardStatus('Keine Renn-Daten in den geladenen Matches gefunden.');
+
+        elements.leaderboardEmpty.textContent = t('leaderboard.empty.noData');
+        setLeaderboardStatus('leaderboard.status.noneData');
+
         return;
       }
 
       if (!rows.length) {
         elements.leaderboardEmpty.hidden = false;
-        elements.leaderboardEmpty.textContent = 'Keine Ergebnisse passend zu den aktuellen Filtern.';
-        setLeaderboardStatus('Keine Ergebnisse für die aktuellen Filter.');
+
+        elements.leaderboardEmpty.textContent = t('leaderboard.empty.noFilterMatches');
+        setLeaderboardStatus('leaderboard.status.noFilterMatches');
+
         return;
       }
 
@@ -1412,8 +1834,8 @@ try {
         const recordDate = entry.recordedAt || entry.startedAt;
         const dateLabel = recordDate ? formatter.format(recordDate) : '–';
         const vehicle = entry.vehicle ? `<span>${escapeHtml(entry.vehicle)}</span>` : '';
-        const matchIdLabel = entry.matchId && entry.matchId !== 'Unbekannt' ? entry.matchId : '';
-        const matchIdHtml = matchIdLabel ? `<span class="mono" title="Match-ID">${escapeHtml(matchIdLabel)}</span>` : '';
+        const matchIdLabel = entry.matchId && entry.matchId !== t('common.unknown') ? entry.matchId : '';
+        const matchIdHtml = matchIdLabel ? `<span class="mono" title="${escapeHtml(t('leaderboard.matchId.title'))}">${escapeHtml(matchIdLabel)}</span>` : '';
 
         return `
           <tr>
@@ -1440,7 +1862,9 @@ try {
       }).join('');
 
       elements.leaderboardBody.innerHTML = markup;
-      setLeaderboardStatus(`${rows.length} von ${state.leaderboard.length} Bestzeiten angezeigt.`);
+
+      setLeaderboardStatus('leaderboard.status.count', { displayed: rows.length, total: state.leaderboard.length });
+
     }
 
     function updateModeFilter() {
@@ -1452,12 +1876,14 @@ try {
         if (!options.has(key)) {
 
           options.set(key, humanizeMode(mode));
-
         }
       }
 
-      const entries = Array.from(options.entries()).sort((a, b) => a[1].localeCompare(b[1], 'de'));
-      elements.modeFilter.innerHTML = '<option value="__all">Alle Modi</option>' + entries.map(([value, label]) => `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join('');
+      const locale = getLocale();
+      const entries = Array.from(options.entries()).sort((a, b) => a[1].localeCompare(b[1], locale));
+      const defaultLabel = t('filters.matches.mode.all');
+      elements.modeFilter.innerHTML = `<option value="__all">${escapeHtml(defaultLabel)}</option>` + entries.map(([value, label]) => `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join('');
+
 
       if (entries.some(([value]) => value === selected)) {
         elements.modeFilter.value = selected;
@@ -1499,7 +1925,9 @@ try {
       });
       const items = Array.from(breakdown.values()).sort((a, b) => b.count - a.count);
       if (!items.length) {
-        elements.modeBreakdown.innerHTML = '<li>Keine Daten vorhanden.</li>';
+
+        elements.modeBreakdown.innerHTML = `<li>${escapeHtml(t('breakdown.empty'))}</li>`;
+
       } else {
         elements.modeBreakdown.innerHTML = items
           .map((item) => `<li><span>${escapeHtml(item.label)}</span><span>${item.count}</span></li>`)
@@ -1510,7 +1938,9 @@ try {
     function renderMatches() {
       elements.matches.innerHTML = '';
       if (!state.filteredMatches.length) {
-        elements.matches.innerHTML = '<div class="empty-state">Keine Matches gefunden. Passe die Filter an oder lade neue Daten.</div>';
+
+        elements.matches.innerHTML = `<div class="empty-state">${escapeHtml(t('matches.empty'))}</div>`;
+
         return;
       }
 
@@ -1525,6 +1955,22 @@ try {
         const players = extractPlayers(match);
         const date = extractStart(match);
 
+
+        const labels = {
+          map: t('matches.summary.mapLabel'),
+          id: t('matches.summary.idLabel'),
+          start: t('matches.summary.startLabel'),
+          duration: t('matches.summary.durationLabel'),
+          players: t('matches.summary.playersTitle'),
+          server: t('matches.meta.server'),
+          version: t('matches.meta.version'),
+          recorded: t('matches.meta.recorded'),
+          size: t('matches.meta.size')
+        };
+
+        const formattedDate = date ? formatter.format(date) : '–';
+        const durationLabel = duration || '–';
+
         const details = document.createElement('details');
         details.className = 'match';
 
@@ -1532,14 +1978,14 @@ try {
         summary.innerHTML = `
 
           <span class="mode-badge">${escapeHtml(modeLabel)}</span>
-
           <div class="summary-meta">
-            <span><strong>${escapeHtml(mapName)}</strong>Map</span>
-            <span><strong>${escapeHtml(matchId)}</strong>ID</span>
-            <span><strong>${date ? formatter.format(date) : '–'}</strong>Start</span>
-            <span><strong>${duration || '–'}</strong>Dauer</span>
+            <span><strong>${escapeHtml(mapName)}</strong>${escapeHtml(labels.map)}</span>
+            <span><strong>${escapeHtml(matchId)}</strong>${escapeHtml(labels.id)}</span>
+            <span><strong>${escapeHtml(formattedDate)}</strong>${escapeHtml(labels.start)}</span>
+            <span><strong>${escapeHtml(durationLabel)}</strong>${escapeHtml(labels.duration)}</span>
           </div>
-          <span class="players-pill" title="Spielerzahl">👥 ${players.length}</span>
+          <span class="players-pill" title="${escapeHtml(labels.players)}">👥 ${players.length}</span>
+
         `;
         details.append(summary);
 
@@ -1552,20 +1998,25 @@ try {
         const metaList = document.createElement('dl');
         metaList.className = 'meta-list';
         metaList.innerHTML = `
-          <div><dt>Server</dt><dd>${escapeHtml(firstString(match, ['server', 'serverName', 'info.server', 'metadata.server']) || '–')}</dd></div>
-          <div><dt>Version</dt><dd>${escapeHtml(firstString(match, ['version', 'build', 'metadata.version']) || '–')}</dd></div>
-          <div><dt>Aufgenommen</dt><dd>${escapeHtml(firstString(match, ['receivedAt']) || (date ? date.toISOString() : '–'))}</dd></div>
-          <div><dt>Dateigröße</dt><dd>${escapeHtml(firstString(match, ['filesize']) || '–')}</dd></div>
+
+          <div><dt>${escapeHtml(labels.server)}</dt><dd>${escapeHtml(firstString(match, ['server', 'serverName', 'info.server', 'metadata.server']) || '–')}</dd></div>
+          <div><dt>${escapeHtml(labels.version)}</dt><dd>${escapeHtml(firstString(match, ['version', 'build', 'metadata.version']) || '–')}</dd></div>
+          <div><dt>${escapeHtml(labels.recorded)}</dt><dd>${escapeHtml(firstString(match, ['receivedAt']) || (date ? date.toISOString() : '–'))}</dd></div>
+          <div><dt>${escapeHtml(labels.size)}</dt><dd>${escapeHtml(firstString(match, ['filesize']) || '–')}</dd></div>
         `;
 
         const playersBlock = document.createElement('div');
-        playersBlock.innerHTML = `<h3 style="margin:0 0 10px; font-size:0.95rem; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted);">Spieler (${players.length})</h3>`;
+        const playersHeading = t('matches.players.heading', { count: players.length });
+        playersBlock.innerHTML = `<h3 style="margin:0 0 10px; font-size:0.95rem; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted);">${escapeHtml(playersHeading)}</h3>`;
+
         const playerList = document.createElement('ul');
         playerList.className = 'players-list';
         if (players.length) {
           playerList.innerHTML = players.map((name) => `<li>${escapeHtml(name)}</li>`).join('');
         } else {
-          playerList.innerHTML = '<li>Keine Spielerinformationen vorhanden.</li>';
+
+          playerList.innerHTML = `<li>${escapeHtml(t('matches.players.empty'))}</li>`;
+
         }
         playersBlock.append(playerList);
 
@@ -1619,9 +2070,9 @@ try {
 
     async function loadMatches() {
       state.limit = Number(elements.limitSelect.value) || 50;
-      setStatus('Lade Matches…');
 
-      setLeaderboardStatus('Lade Bestzeiten…');
+      setStatus('status.loadingMatches');
+      setLeaderboardStatus('leaderboard.status.loading');
 
       elements.refreshButton.disabled = true;
       try {
@@ -1631,17 +2082,17 @@ try {
         }
         const payload = await response.json();
         if (!payload || !Array.isArray(payload.matches)) {
-          throw new Error('Unerwartete Antwort des Servers');
+
+          throw new Error(t('errors.unexpectedResponse'));
         }
         state.allMatches = payload.matches;
         if (!state.allMatches.length) {
-          setStatus('Keine Matches gespeichert.');
+          setStatus('status.noMatches');
         } else {
-          setStatus(`Letzte Aktualisierung: ${formatter.format(new Date())}`);
+          setStatus('status.lastUpdated', { timestamp: formatter.format(new Date()) });
         }
         updateModeFilter();
         updateSummary();
-
         buildLeaderboard();
         updateLeaderboardFilters();
         applyLeaderboardFilters();
@@ -1650,7 +2101,8 @@ try {
       } catch (error) {
         console.error(error);
         state.allMatches = [];
-        setStatus(`Fehler beim Laden: ${error.message}`, true);
+
+        setStatus('status.error', { message: error.message }, true);
 
         state.leaderboard = [];
         state.filteredLeaderboard = [];
@@ -1659,7 +2111,8 @@ try {
         updateLeaderboardFilters();
         renderLeaderboard();
         applyFilters();
-        setLeaderboardStatus(`Fehler beim Laden: ${error.message}`, true);
+
+        setLeaderboardStatus('leaderboard.status.error', { message: error.message }, true);
 
       } finally {
         elements.refreshButton.disabled = false;
@@ -1694,6 +2147,16 @@ try {
           const nextButton = elements.tabButtons[nextIndex];
           nextButton.focus();
           setActiveTab(nextButton.dataset.tab);
+        }
+      });
+    });
+
+
+    elements.languageButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const lang = button.dataset.lang;
+        if (lang && lang !== state.language) {
+          applyLanguage(lang);
         }
       });
     });
@@ -1741,6 +2204,10 @@ try {
       }
     });
 
+
+    applyLanguage(state.language);
+    setStatus('status.loadingMatches');
+    setLeaderboardStatus('leaderboard.status.waiting');
     setActiveTab(state.activeTab);
 
     loadMatches();
