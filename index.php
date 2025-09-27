@@ -46,7 +46,7 @@ try {
       --text-muted: #B7BCD6;
       --accent: #5D8BFF;
       --accent-soft: rgba(93, 139, 255, 0.18);
-      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, sans-serif;
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
     }
 
     body {
@@ -146,6 +146,7 @@ try {
       display: grid;
       place-items: center;
       font-size: 1.25rem;
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
       cursor: pointer;
       transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
     }
