@@ -132,6 +132,7 @@ try {
       align-items: end;
     }
 
+
     .tabbed-panel {
       display: flex;
       flex-direction: column;
@@ -253,6 +254,7 @@ try {
         min-width: 100%;
       }
     }
+
 
     label {
       display: block;
@@ -532,6 +534,7 @@ try {
       <img src="logo.png" alt="Q3Rally Logo" onerror="this.style.display='none'">
       <div>
         <h1>Q3Rally Ladder Monitor</h1>
+
         <p>Direkte Vorschau aller gespeicherten Matches aus dem <code>data/</code>-Ordner. Vergleiche Bestzeiten aus Renn-Modi oder filtere in der Matchübersicht nach Maps, IDs und Spielern – inklusive vollständiger JSON-Details.</p>
       </div>
       <dl>
@@ -618,7 +621,36 @@ try {
         <noscript>
           <p class="empty-state">Bitte JavaScript aktivieren, um die gespeicherten Matches anzeigen zu können.</p>
         </noscript>
+
       </div>
+      <div>
+        <label for="limitSelect">Lade-Limit</label>
+        <select id="limitSelect">
+          <option value="25">25</option>
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+          <option value="250">250</option>
+          <option value="500">500</option>
+        </select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="refreshButton" type="button">Aktualisieren</button>
+        <p class="status" id="statusMessage">Lade Matches…</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 style="margin:0; font-size:1.05rem; letter-spacing:0.02em; text-transform:uppercase; color:var(--text-muted);">Modus-Verteilung</h2>
+      <ul id="modeBreakdown"></ul>
+    </section>
+
+    <section class="panel">
+      <h2 style="margin:0 0 18px; font-size:1.2rem;">Match-Archiv</h2>
+      <div id="matches" aria-live="polite"></div>
+      <noscript>
+        <p class="empty-state">Bitte JavaScript aktivieren, um die gespeicherten Matches anzeigen zu können.</p>
+      </noscript>
     </section>
 
     <section class="panel">
@@ -633,10 +665,12 @@ try {
     const state = {
       allMatches: [],
       filteredMatches: [],
+
       limit: 50,
       leaderboard: [],
       filteredLeaderboard: [],
       activeTab: 'leaderboard'
+
     };
 
     const elements = {
@@ -650,6 +684,7 @@ try {
       statLast: document.getElementById('stat-last'),
       statModes: document.getElementById('stat-modes'),
       statPlayers: document.getElementById('stat-players'),
+
       modeBreakdown: document.getElementById('modeBreakdown'),
       leaderboardStatus: document.getElementById('leaderboardStatus'),
       leaderboardBody: document.getElementById('leaderboardBody'),
@@ -662,12 +697,14 @@ try {
         leaderboard: document.getElementById('tab-leaderboard'),
         matches: document.getElementById('tab-matches')
       }
+
     };
 
     const formatter = new Intl.DateTimeFormat('de-DE', {
       dateStyle: 'medium',
       timeStyle: 'short'
     });
+
 
     const TIME_PATH_CANDIDATES = [
       'bestLap',
@@ -751,10 +788,12 @@ try {
 
     const MAX_REASONABLE_TIME = 6 * 3600; // 6 Stunden
 
+
     function setStatus(message, isError = false) {
       elements.statusMessage.textContent = message;
       elements.statusMessage.classList.toggle('error', Boolean(isError));
     }
+
 
     function setLeaderboardStatus(message, isError = false) {
       elements.leaderboardStatus.textContent = message;
@@ -1512,7 +1551,9 @@ try {
     async function loadMatches() {
       state.limit = Number(elements.limitSelect.value) || 50;
       setStatus('Lade Matches…');
+
       setLeaderboardStatus('Lade Bestzeiten…');
+
       elements.refreshButton.disabled = true;
       try {
         const response = await fetch(`${API_BASE}/matches?limit=${state.limit}`);
@@ -1531,14 +1572,17 @@ try {
         }
         updateModeFilter();
         updateSummary();
+
         buildLeaderboard();
         updateLeaderboardFilters();
         applyLeaderboardFilters();
+
         applyFilters();
       } catch (error) {
         console.error(error);
         state.allMatches = [];
         setStatus(`Fehler beim Laden: ${error.message}`, true);
+
         state.leaderboard = [];
         state.filteredLeaderboard = [];
         updateModeFilter();
@@ -1547,10 +1591,12 @@ try {
         renderLeaderboard();
         applyFilters();
         setLeaderboardStatus(`Fehler beim Laden: ${error.message}`, true);
+
       } finally {
         elements.refreshButton.disabled = false;
       }
     }
+
 
     function setActiveTab(tab) {
       if (!elements.tabPanels[tab]) {
@@ -1596,6 +1642,7 @@ try {
       applyLeaderboardFilters();
     });
 
+
     elements.modeFilter.addEventListener('change', () => {
       applyFilters();
     });
@@ -1615,6 +1662,7 @@ try {
     document.addEventListener('keydown', (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
+
         if (state.activeTab === 'leaderboard' && !elements.leaderboardPlayerSearch.disabled) {
           elements.leaderboardPlayerSearch.focus();
         } else {
@@ -1627,6 +1675,7 @@ try {
     });
 
     setActiveTab(state.activeTab);
+
     loadMatches();
   </script>
 </body>
