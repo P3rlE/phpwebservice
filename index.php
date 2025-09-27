@@ -77,6 +77,7 @@ try {
     }
 
     .hero {
+
       display: flex;
       flex-direction: column;
       gap: 26px;
@@ -99,6 +100,7 @@ try {
     .hero-info {
       display: flex;
       flex-direction: column;
+
     }
 
     .hero img {
@@ -121,6 +123,7 @@ try {
       margin: 0;
       color: var(--text-muted);
       line-height: 1.6;
+
       max-width: 52ch;
     }
 
@@ -571,6 +574,7 @@ try {
         padding: 24px 14px 38px;
       }
 
+
       .hero-top {
         flex-direction: column;
         align-items: stretch;
@@ -596,6 +600,7 @@ try {
       }
 
       .hero-stats .stat {
+
         text-align: center;
       }
 
@@ -613,6 +618,7 @@ try {
 <body>
   <main class="page">
     <section class="panel hero">
+
       <div class="hero-top">
         <div class="hero-brand">
           <img src="logo.png" alt="Q3Rally Logo" onerror="this.style.display='none'">
@@ -624,8 +630,11 @@ try {
         <div class="language-toggle" role="group" aria-label="Sprachauswahl" data-i18n-aria-label="language.toggleLabel">
           <button class="language-button active" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel">🇩🇪</button>
           <button class="language-button" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel">🇬🇧</button>
+
         </div>
+        <p class="empty-state" id="leaderboardEmpty" hidden>Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.</p>
       </div>
+
       <dl class="hero-stats">
         <div class="stat"><dt data-i18n="stats.matches">Matches</dt><dd id="stat-total">–</dd></div>
         <div class="stat"><dt data-i18n="stats.lastUpdate">Letztes Update</dt><dd id="stat-last">–</dd></div>
@@ -681,6 +690,7 @@ try {
       <div class="tab-panel" id="tab-matches" role="tabpanel" aria-labelledby="tab-button-matches">
         <div class="controls match-controls">
           <div>
+
             <label for="modeFilter" data-i18n="filters.matches.mode.label">Spielmodus</label>
             <select id="modeFilter">
               <option value="__all" data-i18n="filters.matches.mode.all">Alle Modi</option>
@@ -692,6 +702,7 @@ try {
           </div>
           <div>
             <label for="limitSelect" data-i18n="filters.matches.limit.label">Lade-Limit</label>
+
             <select id="limitSelect">
               <option value="25">25</option>
               <option value="50" selected>50</option>
@@ -702,25 +713,32 @@ try {
           </div>
           <div>
             <label>&nbsp;</label>
+
             <button id="refreshButton" type="button" data-i18n="filters.matches.refresh">Aktualisieren</button>
             <p class="status" id="statusMessage"></p>
+
           </div>
         </div>
         <div id="matches" aria-live="polite"></div>
         <noscript>
+
           <p class="empty-state" data-i18n="noscript.message">Bitte JavaScript aktivieren, um die gespeicherten Matches anzeigen zu können.</p>
         </noscript>
+
       </div>
     </section>
 
     <section class="panel">
+
       <h2 style="margin:0; font-size:1.05rem; letter-spacing:0.02em; text-transform:uppercase; color:var(--text-muted);" data-i18n="breakdown.heading">Modus-Verteilung</h2>
+
       <ul id="modeBreakdown"></ul>
     </section>
   </main>
 
   <script>
     const API_BASE = <?= json_encode($apiBase, JSON_UNESCAPED_SLASHES); ?>;
+
 
     const I18N = {
       de: {
@@ -890,6 +908,7 @@ try {
         overview: { key: null, params: {}, isError: false },
         leaderboard: { key: null, params: {}, isError: false }
       }
+
     };
 
     const elements = {
@@ -903,6 +922,7 @@ try {
       statLast: document.getElementById('stat-last'),
       statModes: document.getElementById('stat-modes'),
       statPlayers: document.getElementById('stat-players'),
+
       modeBreakdown: document.getElementById('modeBreakdown'),
       leaderboardStatus: document.getElementById('leaderboardStatus'),
       leaderboardBody: document.getElementById('leaderboardBody'),
@@ -914,6 +934,7 @@ try {
       tabPanels: {
         leaderboard: document.getElementById('tab-leaderboard'),
         matches: document.getElementById('tab-matches')
+
       },
       languageButtons: Array.from(document.querySelectorAll('.language-button')),
       html: document.documentElement,
@@ -1045,6 +1066,7 @@ try {
       syncStatuses();
     }
 
+
     const TIME_PATH_CANDIDATES = [
       'bestLap',
       'bestLapTime',
@@ -1127,6 +1149,7 @@ try {
 
     const MAX_REASONABLE_TIME = 6 * 3600; // 6 Stunden
 
+
     function setStatus(key, params = {}, isError = false, persist = true) {
       const message = formatMessage(key, params);
       elements.statusMessage.textContent = message;
@@ -1143,6 +1166,7 @@ try {
       if (persist) {
         state.statuses.leaderboard = { key, params, isError };
       }
+
     }
 
     function valueAtPath(obj, path) {
@@ -1231,7 +1255,9 @@ try {
         'rules.mode',
         'meta.mode',
         'type'
+
       ]) || '__unknown__';
+
     }
 
     function extractMap(match) {
@@ -1288,15 +1314,19 @@ try {
     }
 
     function extractMatchId(match) {
+
       const id = firstString(match, [
+
         'matchId',
         'id',
         'match.id',
         'identifier',
         'metadata.id'
+
       ]);
       return id || t('common.unknown');
     }
+
 
     function extractRecordedAtFromMatchId(matchId) {
       if (typeof matchId !== 'string') {
@@ -1365,24 +1395,30 @@ try {
         .replaceAll("'", '&#039;');
     }
 
+
     function canonicalMode(mode) {
       if (typeof mode !== 'string') {
         return '__unknown__';
       }
+
       const trimmed = mode.trim();
       if (!trimmed) {
         return '__unknown__';
       }
       return trimmed.toLowerCase();
+
     }
 
     function humanizeMode(mode) {
       if (typeof mode !== 'string') {
+
         return t('mode.unknown');
+
       }
 
       const trimmed = mode.trim();
       if (!trimmed) {
+
         return t('mode.unknown');
       }
 
@@ -1390,12 +1426,15 @@ try {
       const translations = MODE_TRANSLATIONS[state.language] || {};
       if (Object.prototype.hasOwnProperty.call(translations, key)) {
         return translations[key];
+
       }
 
       const withoutPrefix = trimmed.replace(/^GT[_\-\s]?/i, '');
       const normalized = withoutPrefix.replace(/[_\-]+/g, ' ').toLowerCase();
+
       const locale = getLocale();
       return normalized.replace(/(^|\s)([\p{L}])/gu, (match, prefix, char) => prefix + char.toLocaleUpperCase(locale));
+
     }
 
     function isReasonableRaceTime(seconds) {
@@ -1623,14 +1662,18 @@ try {
           continue;
         }
 
+
         const rawMode = extractMode(match);
         const modeKey = canonicalMode(rawMode);
         const modeLabel = humanizeMode(rawMode);
+
         const map = extractMap(match);
         const mapKey = map.toLowerCase();
         const matchId = extractMatchId(match);
         const startedAt = extractStart(match);
+
         const recordedAt = extractRecordedAtFromMatchId(matchId);
+
 
         for (const entry of entries) {
           const player = extractLeaderboardPlayer(entry);
@@ -1651,27 +1694,33 @@ try {
               time: seconds,
               map,
               mapKey,
+
               mode: modeLabel,
               modeKey,
               matchId,
               startedAt,
               recordedAt,
+
               vehicle
             });
           }
         }
       }
 
+
       const locale = getLocale();
+
       state.leaderboard = Array.from(bestByKey.values()).sort((a, b) => {
         if (a.time !== b.time) {
           return a.time - b.time;
         }
+
         const mapCompare = a.map.localeCompare(b.map, locale);
         if (mapCompare !== 0) {
           return mapCompare;
         }
         return a.player.localeCompare(b.player, locale);
+
       });
     }
 
@@ -1682,8 +1731,10 @@ try {
       defaultOption.textContent = defaultLabel;
       fragment.appendChild(defaultOption);
 
+
       const locale = getLocale();
       const sorted = Array.from(optionsMap.entries()).sort((a, b) => a[1].localeCompare(b[1], locale));
+
       for (const [value, label] of sorted) {
         const option = document.createElement('option');
         option.value = value;
@@ -1717,8 +1768,10 @@ try {
         }
       }
 
+
       populateSelect(elements.leaderboardModeFilter, t('filters.leaderboard.mode.all'), modeOptions, previousMode);
       populateSelect(elements.leaderboardMapFilter, t('filters.leaderboard.map.all'), mapOptions, previousMap);
+
 
       const hasEntries = state.leaderboard.length > 0;
       elements.leaderboardModeFilter.disabled = !hasEntries;
@@ -1758,26 +1811,32 @@ try {
 
       if (!hasEntries) {
         elements.leaderboardEmpty.hidden = false;
+
         elements.leaderboardEmpty.textContent = t('leaderboard.empty.noData');
         setLeaderboardStatus('leaderboard.status.noneData');
+
         return;
       }
 
       if (!rows.length) {
         elements.leaderboardEmpty.hidden = false;
+
         elements.leaderboardEmpty.textContent = t('leaderboard.empty.noFilterMatches');
         setLeaderboardStatus('leaderboard.status.noFilterMatches');
+
         return;
       }
 
       elements.leaderboardEmpty.hidden = true;
       const markup = rows.map((entry, index) => {
         const rank = index + 1;
+
         const recordDate = entry.recordedAt || entry.startedAt;
         const dateLabel = recordDate ? formatter.format(recordDate) : '–';
         const vehicle = entry.vehicle ? `<span>${escapeHtml(entry.vehicle)}</span>` : '';
         const matchIdLabel = entry.matchId && entry.matchId !== t('common.unknown') ? entry.matchId : '';
         const matchIdHtml = matchIdLabel ? `<span class="mono" title="${escapeHtml(t('leaderboard.matchId.title'))}">${escapeHtml(matchIdLabel)}</span>` : '';
+
         return `
           <tr>
             <td>${rank}</td>
@@ -1792,8 +1851,10 @@ try {
             <td>${escapeHtml(entry.mode)}</td>
             <td>
               <div class="meta">
+
                 <span>${escapeHtml(dateLabel)}</span>
                 ${matchIdHtml}
+
               </div>
             </td>
           </tr>
@@ -1801,7 +1862,9 @@ try {
       }).join('');
 
       elements.leaderboardBody.innerHTML = markup;
+
       setLeaderboardStatus('leaderboard.status.count', { displayed: rows.length, total: state.leaderboard.length });
+
     }
 
     function updateModeFilter() {
@@ -1811,6 +1874,7 @@ try {
         const mode = extractMode(match);
         const key = canonicalMode(mode);
         if (!options.has(key)) {
+
           options.set(key, humanizeMode(mode));
         }
       }
@@ -1819,6 +1883,7 @@ try {
       const entries = Array.from(options.entries()).sort((a, b) => a[1].localeCompare(b[1], locale));
       const defaultLabel = t('filters.matches.mode.all');
       elements.modeFilter.innerHTML = `<option value="__all">${escapeHtml(defaultLabel)}</option>` + entries.map(([value, label]) => `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join('');
+
 
       if (entries.some(([value]) => value === selected)) {
         elements.modeFilter.value = selected;
@@ -1850,15 +1915,19 @@ try {
       state.allMatches.forEach((match) => {
         const mode = extractMode(match);
         const key = canonicalMode(mode);
+
         const label = humanizeMode(mode);
         const current = breakdown.get(key) || { label, count: 0 };
         current.label = label;
+
         current.count += 1;
         breakdown.set(key, current);
       });
       const items = Array.from(breakdown.values()).sort((a, b) => b.count - a.count);
       if (!items.length) {
+
         elements.modeBreakdown.innerHTML = `<li>${escapeHtml(t('breakdown.empty'))}</li>`;
+
       } else {
         elements.modeBreakdown.innerHTML = items
           .map((item) => `<li><span>${escapeHtml(item.label)}</span><span>${item.count}</span></li>`)
@@ -1869,18 +1938,23 @@ try {
     function renderMatches() {
       elements.matches.innerHTML = '';
       if (!state.filteredMatches.length) {
+
         elements.matches.innerHTML = `<div class="empty-state">${escapeHtml(t('matches.empty'))}</div>`;
+
         return;
       }
 
       state.filteredMatches.forEach((match) => {
+
         const rawMode = extractMode(match);
         const modeLabel = humanizeMode(rawMode);
+
         const mapName = extractMap(match);
         const duration = extractDuration(match);
         const matchId = extractMatchId(match);
         const players = extractPlayers(match);
         const date = extractStart(match);
+
 
         const labels = {
           map: t('matches.summary.mapLabel'),
@@ -1902,6 +1976,7 @@ try {
 
         const summary = document.createElement('summary');
         summary.innerHTML = `
+
           <span class="mode-badge">${escapeHtml(modeLabel)}</span>
           <div class="summary-meta">
             <span><strong>${escapeHtml(mapName)}</strong>${escapeHtml(labels.map)}</span>
@@ -1910,6 +1985,7 @@ try {
             <span><strong>${escapeHtml(durationLabel)}</strong>${escapeHtml(labels.duration)}</span>
           </div>
           <span class="players-pill" title="${escapeHtml(labels.players)}">👥 ${players.length}</span>
+
         `;
         details.append(summary);
 
@@ -1922,6 +1998,7 @@ try {
         const metaList = document.createElement('dl');
         metaList.className = 'meta-list';
         metaList.innerHTML = `
+
           <div><dt>${escapeHtml(labels.server)}</dt><dd>${escapeHtml(firstString(match, ['server', 'serverName', 'info.server', 'metadata.server']) || '–')}</dd></div>
           <div><dt>${escapeHtml(labels.version)}</dt><dd>${escapeHtml(firstString(match, ['version', 'build', 'metadata.version']) || '–')}</dd></div>
           <div><dt>${escapeHtml(labels.recorded)}</dt><dd>${escapeHtml(firstString(match, ['receivedAt']) || (date ? date.toISOString() : '–'))}</dd></div>
@@ -1931,12 +2008,15 @@ try {
         const playersBlock = document.createElement('div');
         const playersHeading = t('matches.players.heading', { count: players.length });
         playersBlock.innerHTML = `<h3 style="margin:0 0 10px; font-size:0.95rem; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted);">${escapeHtml(playersHeading)}</h3>`;
+
         const playerList = document.createElement('ul');
         playerList.className = 'players-list';
         if (players.length) {
           playerList.innerHTML = players.map((name) => `<li>${escapeHtml(name)}</li>`).join('');
         } else {
+
           playerList.innerHTML = `<li>${escapeHtml(t('matches.players.empty'))}</li>`;
+
         }
         playersBlock.append(playerList);
 
@@ -1966,11 +2046,13 @@ try {
         matches = matches.filter((match) => {
           const mapName = extractMap(match).toLowerCase();
           const matchId = extractMatchId(match).toLowerCase();
+
           const rawMode = extractMode(match);
           const mode = rawMode.toLowerCase();
           const modeLabel = humanizeMode(rawMode).toLowerCase();
           const players = extractPlayers(match).map((name) => name.toLowerCase());
           return [mapName, matchId, mode, modeLabel, ...players].some((value) => value.includes(term));
+
         });
       }
 
@@ -1988,8 +2070,10 @@ try {
 
     async function loadMatches() {
       state.limit = Number(elements.limitSelect.value) || 50;
+
       setStatus('status.loadingMatches');
       setLeaderboardStatus('leaderboard.status.loading');
+
       elements.refreshButton.disabled = true;
       try {
         const response = await fetch(`${API_BASE}/matches?limit=${state.limit}`);
@@ -1998,6 +2082,7 @@ try {
         }
         const payload = await response.json();
         if (!payload || !Array.isArray(payload.matches)) {
+
           throw new Error(t('errors.unexpectedResponse'));
         }
         state.allMatches = payload.matches;
@@ -2011,11 +2096,14 @@ try {
         buildLeaderboard();
         updateLeaderboardFilters();
         applyLeaderboardFilters();
+
         applyFilters();
       } catch (error) {
         console.error(error);
         state.allMatches = [];
+
         setStatus('status.error', { message: error.message }, true);
+
         state.leaderboard = [];
         state.filteredLeaderboard = [];
         updateModeFilter();
@@ -2023,7 +2111,9 @@ try {
         updateLeaderboardFilters();
         renderLeaderboard();
         applyFilters();
+
         setLeaderboardStatus('leaderboard.status.error', { message: error.message }, true);
+
       } finally {
         elements.refreshButton.disabled = false;
       }
@@ -2060,6 +2150,7 @@ try {
         }
       });
     });
+
 
     elements.languageButtons.forEach((button) => {
       button.addEventListener('click', () => {
@@ -2101,6 +2192,7 @@ try {
     document.addEventListener('keydown', (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
+
         if (state.activeTab === 'leaderboard' && !elements.leaderboardPlayerSearch.disabled) {
           elements.leaderboardPlayerSearch.focus();
         } else {
@@ -2112,10 +2204,12 @@ try {
       }
     });
 
+
     applyLanguage(state.language);
     setStatus('status.loadingMatches');
     setLeaderboardStatus('leaderboard.status.waiting');
     setActiveTab(state.activeTab);
+
     loadMatches();
   </script>
 </body>
