@@ -36,6 +36,19 @@ curl -X DELETE https://example.com/ladder/index.php/matches/srv-20240405-183011-
 ## Datenablage
 Jedes Match wird als einzelne JSON-Datei unter `data/<matchId>.json` abgelegt. So lässt sich der Ordner bei Bedarf sichern oder in andere Systeme importieren. Der Service fügt automatisch einen Zeitstempel `receivedAt` hinzu, um Listen sortieren zu können.
 
+## Web-Frontend
+
+Die Startseite von `index.php` liefert jetzt ein modernes Dashboard, das die gespeicherten Matches aus dem `data/`-Ordner direkt im Browser aufbereitet. Highlights:
+
+* **Bestzeiten-Ranking** – Ein eigener Tab wertet Renn-Modi aus, erkennt Bestzeiten pro Spieler/Map und sortiert sie automatisch.
+* **Filter nach Spielmodus** – Die verfügbaren Modi werden automatisch aus den vorhandenen JSON-Dateien ermittelt.
+* **Suche nach Match-ID, Map oder Spielern** – Sofortige Filterung während der Eingabe.
+* **Modus-Verteilung & Kennzahlen** – Karten zeigen Gesamtanzahl, letzte Aktualisierung sowie erkannte Spieler.
+* **Detailansicht pro Match** – Ein Klick öffnet Metadaten und das vollständige JSON, damit sich Fehler schnell nachvollziehen lassen.
+* **Konfigurierbares Lade-Limit** – Über die UI lässt sich bestimmen, wie viele Matches das Frontend auf einmal lädt.
+
+Das Frontend greift ausschließlich auf die bestehenden API-Endpunkte zu. Die JSON-Schnittstelle bleibt vollständig kompatibel.
+
 ## Backup & Wartung
 * Regelmäßig den Ordner `data/` sichern.
 * Bei sehr vielen Matches kann die Dateibasis unübersichtlich werden; für große Installationen empfiehlt sich langfristig dennoch eine vollwertige Datenbank.
