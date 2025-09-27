@@ -532,6 +532,7 @@ try {
       <img src="logo.png" alt="Q3Rally Logo" onerror="this.style.display='none'">
       <div>
         <h1>Q3Rally Ladder Monitor</h1>
+
         <p>Direkte Vorschau aller gespeicherten Matches aus dem <code>data/</code>-Ordner. Vergleiche Bestzeiten aus Renn-Modi oder filtere in der Matchübersicht nach Maps, IDs und Spielern – inklusive vollständiger JSON-Details.</p>
       </div>
       <dl>
@@ -577,6 +578,7 @@ try {
                 <th scope="col">Bestzeit</th>
                 <th scope="col">Map</th>
                 <th scope="col">Modus</th>
+
                 <th scope="col">Aufgestellt am</th>
               </tr>
             </thead>
@@ -618,6 +620,7 @@ try {
         <noscript>
           <p class="empty-state">Bitte JavaScript aktivieren, um die gespeicherten Matches anzeigen zu können.</p>
         </noscript>
+
       </div>
     </section>
 
@@ -633,10 +636,12 @@ try {
     const state = {
       allMatches: [],
       filteredMatches: [],
+
       limit: 50,
       leaderboard: [],
       filteredLeaderboard: [],
       activeTab: 'leaderboard'
+
     };
 
     const elements = {
@@ -650,6 +655,7 @@ try {
       statLast: document.getElementById('stat-last'),
       statModes: document.getElementById('stat-modes'),
       statPlayers: document.getElementById('stat-players'),
+
       modeBreakdown: document.getElementById('modeBreakdown'),
       leaderboardStatus: document.getElementById('leaderboardStatus'),
       leaderboardBody: document.getElementById('leaderboardBody'),
@@ -662,12 +668,14 @@ try {
         leaderboard: document.getElementById('tab-leaderboard'),
         matches: document.getElementById('tab-matches')
       }
+
     };
 
     const formatter = new Intl.DateTimeFormat('de-DE', {
       dateStyle: 'medium',
       timeStyle: 'short'
     });
+
 
     const TIME_PATH_CANDIDATES = [
       'bestLap',
@@ -751,10 +759,12 @@ try {
 
     const MAX_REASONABLE_TIME = 6 * 3600; // 6 Stunden
 
+
     function setStatus(message, isError = false) {
       elements.statusMessage.textContent = message;
       elements.statusMessage.classList.toggle('error', Boolean(isError));
     }
+
 
     function setLeaderboardStatus(message, isError = false) {
       elements.leaderboardStatus.textContent = message;
@@ -913,6 +923,7 @@ try {
       ]) || 'Unbekannt';
     }
 
+
     function extractRecordedAtFromMatchId(matchId) {
       if (typeof matchId !== 'string') {
         return null;
@@ -980,6 +991,7 @@ try {
         .replaceAll("'", '&#039;');
     }
 
+
     const MODE_TRANSLATIONS = {
       'gt_racing': 'Racing',
       'gt_quickrace': 'Quickrace',
@@ -1014,6 +1026,7 @@ try {
       const withoutPrefix = trimmed.replace(/^GT[_\-\s]?/i, '');
       const normalized = withoutPrefix.replace(/[_\-]+/g, ' ').toLowerCase();
       return normalized.replace(/(^|\s)([a-zäöüß])/g, (match, prefix, char) => prefix + char.toUpperCase());
+
     }
 
     function isReasonableRaceTime(seconds) {
@@ -1241,14 +1254,18 @@ try {
           continue;
         }
 
+
         const rawMode = extractMode(match);
         const modeKey = canonicalMode(rawMode);
         const modeLabel = humanizeMode(rawMode);
+
         const map = extractMap(match);
         const mapKey = map.toLowerCase();
         const matchId = extractMatchId(match);
         const startedAt = extractStart(match);
+
         const recordedAt = extractRecordedAtFromMatchId(matchId);
+
 
         for (const entry of entries) {
           const player = extractLeaderboardPlayer(entry);
@@ -1269,11 +1286,13 @@ try {
               time: seconds,
               map,
               mapKey,
+
               mode: modeLabel,
               modeKey,
               matchId,
               startedAt,
               recordedAt,
+
               vehicle
             });
           }
@@ -1389,11 +1408,13 @@ try {
       elements.leaderboardEmpty.hidden = true;
       const markup = rows.map((entry, index) => {
         const rank = index + 1;
+
         const recordDate = entry.recordedAt || entry.startedAt;
         const dateLabel = recordDate ? formatter.format(recordDate) : '–';
         const vehicle = entry.vehicle ? `<span>${escapeHtml(entry.vehicle)}</span>` : '';
         const matchIdLabel = entry.matchId && entry.matchId !== 'Unbekannt' ? entry.matchId : '';
         const matchIdHtml = matchIdLabel ? `<span class="mono" title="Match-ID">${escapeHtml(matchIdLabel)}</span>` : '';
+
         return `
           <tr>
             <td>${rank}</td>
@@ -1408,8 +1429,10 @@ try {
             <td>${escapeHtml(entry.mode)}</td>
             <td>
               <div class="meta">
+
                 <span>${escapeHtml(dateLabel)}</span>
                 ${matchIdHtml}
+
               </div>
             </td>
           </tr>
@@ -1427,7 +1450,9 @@ try {
         const mode = extractMode(match);
         const key = canonicalMode(mode);
         if (!options.has(key)) {
+
           options.set(key, humanizeMode(mode));
+
         }
       }
 
@@ -1464,9 +1489,11 @@ try {
       state.allMatches.forEach((match) => {
         const mode = extractMode(match);
         const key = canonicalMode(mode);
+
         const label = humanizeMode(mode);
         const current = breakdown.get(key) || { label, count: 0 };
         current.label = label;
+
         current.count += 1;
         breakdown.set(key, current);
       });
@@ -1488,8 +1515,10 @@ try {
       }
 
       state.filteredMatches.forEach((match) => {
+
         const rawMode = extractMode(match);
         const modeLabel = humanizeMode(rawMode);
+
         const mapName = extractMap(match);
         const duration = extractDuration(match);
         const matchId = extractMatchId(match);
@@ -1501,7 +1530,9 @@ try {
 
         const summary = document.createElement('summary');
         summary.innerHTML = `
+
           <span class="mode-badge">${escapeHtml(modeLabel)}</span>
+
           <div class="summary-meta">
             <span><strong>${escapeHtml(mapName)}</strong>Map</span>
             <span><strong>${escapeHtml(matchId)}</strong>ID</span>
@@ -1564,11 +1595,13 @@ try {
         matches = matches.filter((match) => {
           const mapName = extractMap(match).toLowerCase();
           const matchId = extractMatchId(match).toLowerCase();
+
           const rawMode = extractMode(match);
           const mode = rawMode.toLowerCase();
           const modeLabel = humanizeMode(rawMode).toLowerCase();
           const players = extractPlayers(match).map((name) => name.toLowerCase());
           return [mapName, matchId, mode, modeLabel, ...players].some((value) => value.includes(term));
+
         });
       }
 
@@ -1587,7 +1620,9 @@ try {
     async function loadMatches() {
       state.limit = Number(elements.limitSelect.value) || 50;
       setStatus('Lade Matches…');
+
       setLeaderboardStatus('Lade Bestzeiten…');
+
       elements.refreshButton.disabled = true;
       try {
         const response = await fetch(`${API_BASE}/matches?limit=${state.limit}`);
@@ -1606,14 +1641,17 @@ try {
         }
         updateModeFilter();
         updateSummary();
+
         buildLeaderboard();
         updateLeaderboardFilters();
         applyLeaderboardFilters();
+
         applyFilters();
       } catch (error) {
         console.error(error);
         state.allMatches = [];
         setStatus(`Fehler beim Laden: ${error.message}`, true);
+
         state.leaderboard = [];
         state.filteredLeaderboard = [];
         updateModeFilter();
@@ -1622,6 +1660,7 @@ try {
         renderLeaderboard();
         applyFilters();
         setLeaderboardStatus(`Fehler beim Laden: ${error.message}`, true);
+
       } finally {
         elements.refreshButton.disabled = false;
       }
@@ -1690,6 +1729,7 @@ try {
     document.addEventListener('keydown', (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
+
         if (state.activeTab === 'leaderboard' && !elements.leaderboardPlayerSearch.disabled) {
           elements.leaderboardPlayerSearch.focus();
         } else {
@@ -1702,6 +1742,7 @@ try {
     });
 
     setActiveTab(state.activeTab);
+
     loadMatches();
   </script>
 </body>
