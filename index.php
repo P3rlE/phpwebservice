@@ -879,20 +879,32 @@ try {
 
     const MODE_TRANSLATIONS = {
       de: {
-        'gt_racing': 'Rennen',
-        'gt_quickrace': 'Schnellrennen',
-        'gt_timeattack': 'Zeitfahren',
-        'gt_championship': 'Meisterschaft',
-        'gt_duel': 'Duell',
-        'gt_capture': 'Capture the Flag'
+        'GT_RACING': 'Rennen',
+        'GT_RACING_DM': 'Deathmatch Rennen',
+        'GT_DERBY': 'Demolition Derby',
+        'GT_LCS': 'Last Car Standing',
+        'GT_ELIMINATION': 'Elimination',
+        'GT_DEATHMATCH': 'Deathmatch'
+        'GT_TEAM': 'Team Deathmatch'
+        'GT_TEAM_RACING': 'Team Racing'
+        'GT_TEAM_RACING_DM': 'Team Racing Deathmatch'
+        'GT_CTF': 'Capture the Flag'
+        'GT_CTF4': '4-Teams-CTF'
+        'GT_DOMINATION': 'Domination'
       },
       en: {
-        'gt_racing': 'Racing',
-        'gt_quickrace': 'Quickrace',
-        'gt_timeattack': 'Time Attack',
-        'gt_championship': 'Championship',
-        'gt_duel': 'Duel',
-        'gt_capture': 'Capture the Flag'
+        'GT_RACING': 'Racing',
+        'GT_RACING_DM': 'Racing Deathmatch',
+        'GT_DERBY': 'Demolition Derby',
+        'GT_LCS': 'Last Car Standing',
+        'GT_ELIMINATION': 'Elimination',
+        'GT_DEATHMATCH': 'Deathmatch'
+        'GT_TEAM': 'Team Deathmatch'
+        'GT_TEAM_RACING': 'Team Racing'
+        'GT_TEAM_RACING_DM': 'Team Racing Deathmatch'
+        'GT_CTF': 'Capture the Flag'
+        'GT_CTF4': '4-Teams-CTF'
+        'GT_DOMINATION': 'Domination'
       }
     };
 
