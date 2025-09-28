@@ -32,7 +32,7 @@ try {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Q3Rally Ladder Monitor</title>
+  <title>Q3Rally Ladder Monitor beta</title>
   <meta name="description" content="Frontend zur Auswertung der gespeicherten Q3Rally-Ladder-Matches.">
   <style>
     :root {
@@ -160,15 +160,19 @@ try {
       width: 42px;
       height: 42px;
       border-radius: 50%;
-      display: grid;
-      place-items: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
+      line-height: 1;
       transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
     }
 
     .language-button img {
+      display: block;
       width: 26px;
       height: 26px;
+      object-fit: contain;
     }
 
     .language-button:hover {
@@ -655,7 +659,7 @@ try {
         <div class="hero-brand">
           <img src="logo.png" alt="Q3Rally Logo" onerror="this.style.display='none'">
           <div class="hero-info">
-            <h1 data-i18n="hero.title">Q3Rally Ladder Monitor <span class="badge-beta">beta</span></h1>
+            <h1 data-i18n-html="hero.title">Q3Rally Ladder Monitor <span class="badge-beta">beta</span></h1>
             <p data-i18n-html="hero.description">Direkte Vorschau aller gespeicherten Matches aus dem <code>data/</code>-Ordner. Vergleiche Bestzeiten aus Renn-Modi oder filtere in der Matchübersicht nach Maps, IDs und Spielern – inklusive vollständiger JSON-Details.</p>
           </div>
         </div>
@@ -893,9 +897,9 @@ try {
 
     const I18N = {
       de: {
-        'meta.title': 'Q3Rally Ladder Monitor',
+        'meta.title': 'Q3Rally Ladder Monitor beta',
         'meta.description': 'Frontend zur Auswertung der gespeicherten Q3Rally-Ladder-Matches.',
-        'hero.title': 'Q3Rally Ladder Monitor',
+        'hero.title': 'Q3Rally Ladder Monitor <span class="badge-beta">beta</span>',
         'hero.description': 'Direkte Vorschau aller gespeicherten Matches aus dem <code>data/</code>-Ordner. Vergleiche Bestzeiten aus Renn-Modi oder filtere in der Matchübersicht nach Maps, IDs und Spielern – inklusive vollständiger JSON-Details.',
         'language.toggleLabel': 'Sprachauswahl',
         'language.deLabel': 'Deutsch',
@@ -1035,9 +1039,9 @@ try {
         'common.unknown': 'Unbekannt'
       },
       en: {
-        'meta.title': 'Q3Rally Ladder Monitor',
+        'meta.title': 'Q3Rally Ladder Monitor beta',
         'meta.description': 'Frontend for exploring the stored Q3Rally ladder matches.',
-        'hero.title': 'Q3Rally Ladder Monitor',
+        'hero.title': 'Q3Rally Ladder Monitor <span class="badge-beta">beta</span>',
         'hero.description': 'Live preview of every stored match from the <code>data/</code> folder. Compare best racing times or filter the match overview by maps, IDs, and players – complete with full JSON details.',
         'language.toggleLabel': 'Language selection',
         'language.deLabel': 'German',
