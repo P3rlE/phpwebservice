@@ -117,6 +117,23 @@ try {
       margin: 0 0 6px;
       font-size: clamp(1.7rem, 2.4vw, 2.15rem);
       letter-spacing: 0.01em;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .badge-beta {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px 4px;
+      border-radius: 999px;
+      background: rgba(93, 139, 255, 0.18);
+      border: 1px solid rgba(93, 139, 255, 0.45);
+      color: var(--accent);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
     }
 
     .hero p {
@@ -145,10 +162,13 @@ try {
       border-radius: 50%;
       display: grid;
       place-items: center;
-      font-size: 1.25rem;
-      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
       cursor: pointer;
       transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+
+    .language-button img {
+      width: 26px;
+      height: 26px;
     }
 
     .language-button:hover {
@@ -635,13 +655,13 @@ try {
         <div class="hero-brand">
           <img src="logo.png" alt="Q3Rally Logo" onerror="this.style.display='none'">
           <div class="hero-info">
-            <h1 data-i18n="hero.title">Q3Rally Ladder Monitor</h1>
+            <h1 data-i18n="hero.title">Q3Rally Ladder Monitor <span class="badge-beta">beta</span></h1>
             <p data-i18n-html="hero.description">Direkte Vorschau aller gespeicherten Matches aus dem <code>data/</code>-Ordner. Vergleiche Bestzeiten aus Renn-Modi oder filtere in der Matchübersicht nach Maps, IDs und Spielern – inklusive vollständiger JSON-Details.</p>
           </div>
         </div>
         <div class="language-toggle" role="group" aria-label="Sprachauswahl" data-i18n-aria-label="language.toggleLabel">
-          <button class="language-button active" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel">🇩🇪</button>
-          <button class="language-button" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel">🇬🇧</button>
+          <button class="language-button active" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="de.png" alt=""></button>
+          <button class="language-button" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="en.png" alt=""></button>
 
         </div>
         <p class="empty-state" id="leaderboardEmpty" hidden>Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.</p>
