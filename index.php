@@ -312,6 +312,17 @@ try {
       color: var(--text-muted);
     }
 
+    .leaderboard-value {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .leaderboard-value span {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
     .mono {
       font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 0.88rem;
@@ -646,8 +657,9 @@ try {
 
     <section class="panel tabbed-panel">
       <div class="tab-header" role="tablist" aria-label="Ansichten" data-i18n-aria-label="tabs.label">
-        <button class="tab-button active" id="tab-button-leaderboard" role="tab" aria-selected="true" aria-controls="tab-leaderboard" data-tab="leaderboard" data-i18n="tabs.bestTimes">Bestzeiten</button>
-        <button class="tab-button" id="tab-button-deathmatch" role="tab" aria-selected="false" aria-controls="tab-deathmatch" data-tab="deathmatch" data-i18n="tabs.deathmatch">K/D-Bestenliste</button>
+        <button class="tab-button active" id="tab-button-leaderboard" role="tab" aria-selected="true" aria-controls="tab-leaderboard" data-tab="leaderboard" data-i18n="tabs.racing">RACING LEADERBOARD</button>
+        <button class="tab-button" id="tab-button-deathmatch" role="tab" aria-selected="false" aria-controls="tab-deathmatch" data-tab="deathmatch" data-i18n="tabs.deathmatch">DEATHMATCH LEADERBOARD</button>
+        <button class="tab-button" id="tab-button-ctf" role="tab" aria-selected="false" aria-controls="tab-ctf" data-tab="ctf" data-i18n="tabs.ctf">CTF LEADERBOARD</button>
         <button class="tab-button" id="tab-button-matches" role="tab" aria-selected="false" aria-controls="tab-matches" data-tab="matches" data-i18n="tabs.matches">Matchübersicht</button>
       </div>
 
@@ -729,6 +741,44 @@ try {
         <p class="empty-state" id="deathmatchEmpty" hidden></p>
       </div>
 
+      <div class="tab-panel" id="tab-ctf" role="tabpanel" aria-labelledby="tab-button-ctf">
+        <div class="controls leaderboard-controls">
+          <div>
+            <label for="ctfModeFilter" data-i18n="filters.ctf.mode.label">Spielmodus</label>
+            <select id="ctfModeFilter">
+              <option value="__all" data-i18n="filters.ctf.mode.all">Alle Objective-Modi</option>
+            </select>
+          </div>
+          <div>
+            <label for="ctfMapFilter" data-i18n="filters.ctf.map.label">Map</label>
+            <select id="ctfMapFilter">
+              <option value="__all" data-i18n="filters.ctf.map.all">Alle Maps</option>
+            </select>
+          </div>
+          <div>
+            <label for="ctfPlayerSearch" data-i18n="filters.ctf.player.label">Spielersuche</label>
+            <input type="search" id="ctfPlayerSearch" placeholder="Spielername…" autocomplete="off" data-i18n-placeholder="filters.ctf.player.placeholder">
+          </div>
+        </div>
+        <p class="status" id="ctfStatus"></p>
+        <div class="table-wrapper" aria-live="polite">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th scope="col" data-i18n="ctf.headers.rank">Rang</th>
+                <th scope="col" data-i18n="ctf.headers.player">Spieler</th>
+                <th scope="col" data-i18n="ctf.headers.value">Zielwertung</th>
+                <th scope="col" data-i18n="ctf.headers.map">Map</th>
+                <th scope="col" data-i18n="ctf.headers.mode">Modus</th>
+                <th scope="col" data-i18n="ctf.headers.recorded">Aufgestellt am</th>
+              </tr>
+            </thead>
+            <tbody id="ctfBody"></tbody>
+          </table>
+        </div>
+        <p class="empty-state" id="ctfEmpty" hidden></p>
+      </div>
+
       <div class="tab-panel" id="tab-matches" role="tabpanel" aria-labelledby="tab-button-matches">
         <div class="controls match-controls">
           <div>
@@ -792,8 +842,9 @@ try {
         'language.deLabel': 'Deutsch',
         'language.enLabel': 'Englisch',
         'tabs.label': 'Ansichten',
-        'tabs.bestTimes': 'Bestzeiten',
-        'tabs.deathmatch': 'K/D-Bestenliste',
+        'tabs.racing': 'RACING LEADERBOARD',
+        'tabs.deathmatch': 'DEATHMATCH LEADERBOARD',
+        'tabs.ctf': 'CTF LEADERBOARD',
         'tabs.matches': 'Matchübersicht',
         'stats.matches': 'Matches',
         'stats.lastUpdate': 'Letztes Update',
@@ -811,6 +862,12 @@ try {
         'filters.deathmatch.map.all': 'Alle Maps',
         'filters.deathmatch.player.label': 'Spielersuche',
         'filters.deathmatch.player.placeholder': 'Spielername…',
+        'filters.ctf.mode.label': 'Spielmodus',
+        'filters.ctf.mode.all': 'Alle Objective-Modi',
+        'filters.ctf.map.label': 'Map',
+        'filters.ctf.map.all': 'Alle Maps',
+        'filters.ctf.player.label': 'Spielersuche',
+        'filters.ctf.player.placeholder': 'Spielername…',
         'filters.matches.mode.label': 'Spielmodus',
         'filters.matches.mode.all': 'Alle Modi',
         'filters.matches.search.label': 'Suche',
@@ -851,6 +908,27 @@ try {
         'deathmatch.empty.noFilterMatches': 'Keine Ergebnisse passend zu den aktuellen Filtern.',
         'deathmatch.matchId.title': 'Match-ID',
         'deathmatch.meta.recorded': 'Aufgestellt am',
+        'ctf.headers.rank': 'Rang',
+        'ctf.headers.player': 'Spieler',
+        'ctf.headers.value': 'Zielwertung',
+        'ctf.headers.map': 'Map',
+        'ctf.headers.mode': 'Modus',
+        'ctf.headers.recorded': 'Aufgestellt am',
+        'ctf.status.waiting': 'Warte auf Daten…',
+        'ctf.status.loading': 'Lade Objective-Werte…',
+        'ctf.status.noneData': 'Keine Objective-Daten in den geladenen Matches gefunden.',
+        'ctf.status.noFilterMatches': 'Keine Ergebnisse für die aktuellen Filter.',
+        'ctf.status.count': '{displayed} von {total} Objective-Werten angezeigt.',
+        'ctf.status.error': 'Fehler beim Laden: {message}',
+        'ctf.empty.noData': 'Keine Objective-Werte gefunden. Lade weitere CTF/Objective-Matches oder passe die Filter an.',
+        'ctf.empty.noFilterMatches': 'Keine Ergebnisse passend zu den aktuellen Filtern.',
+        'ctf.matchId.title': 'Match-ID',
+        'ctf.meta.recorded': 'Aufgestellt am',
+        'ctf.metric.captures': 'Flag-Eroberungen',
+        'ctf.metric.score': 'Punkte',
+        'ctf.metric.wins': 'Runden gewonnen',
+        'ctf.metric.objectives': 'Ziele',
+        'ctf.metric.value': 'Wertung',
         'status.loadingMatches': 'Lade Matches…',
         'status.noMatches': 'Keine Matches gespeichert.',
         'status.lastUpdated': 'Letzte Aktualisierung: {timestamp}',
@@ -884,8 +962,9 @@ try {
         'language.deLabel': 'German',
         'language.enLabel': 'English',
         'tabs.label': 'Views',
-        'tabs.bestTimes': 'Best times',
-        'tabs.deathmatch': 'K/D leaderboard',
+        'tabs.racing': 'RACING LEADERBOARD',
+        'tabs.deathmatch': 'DEATHMATCH LEADERBOARD',
+        'tabs.ctf': 'CTF LEADERBOARD',
         'tabs.matches': 'Match overview',
         'stats.matches': 'Matches',
         'stats.lastUpdate': 'Last update',
@@ -903,6 +982,12 @@ try {
         'filters.deathmatch.map.all': 'All maps',
         'filters.deathmatch.player.label': 'Player search',
         'filters.deathmatch.player.placeholder': 'Player name…',
+        'filters.ctf.mode.label': 'Game mode',
+        'filters.ctf.mode.all': 'All objective modes',
+        'filters.ctf.map.label': 'Map',
+        'filters.ctf.map.all': 'All maps',
+        'filters.ctf.player.label': 'Player search',
+        'filters.ctf.player.placeholder': 'Player name…',
         'filters.matches.mode.label': 'Game mode',
         'filters.matches.mode.all': 'All modes',
         'filters.matches.search.label': 'Search',
@@ -943,6 +1028,27 @@ try {
         'deathmatch.empty.noFilterMatches': 'No results match the current filters.',
         'deathmatch.matchId.title': 'Match ID',
         'deathmatch.meta.recorded': 'Recorded on',
+        'ctf.headers.rank': 'Rank',
+        'ctf.headers.player': 'Player',
+        'ctf.headers.value': 'Objective value',
+        'ctf.headers.map': 'Map',
+        'ctf.headers.mode': 'Mode',
+        'ctf.headers.recorded': 'Recorded on',
+        'ctf.status.waiting': 'Waiting for data…',
+        'ctf.status.loading': 'Loading objective values…',
+        'ctf.status.noneData': 'No objective data found in the loaded matches.',
+        'ctf.status.noFilterMatches': 'No results for the current filters.',
+        'ctf.status.count': 'Showing {displayed} of {total} objective values.',
+        'ctf.status.error': 'Load error: {message}',
+        'ctf.empty.noData': 'No objective values found. Upload more CTF/objective matches or adjust the filters.',
+        'ctf.empty.noFilterMatches': 'No results match the current filters.',
+        'ctf.matchId.title': 'Match ID',
+        'ctf.meta.recorded': 'Recorded on',
+        'ctf.metric.captures': 'Flag captures',
+        'ctf.metric.score': 'Points',
+        'ctf.metric.wins': 'Rounds won',
+        'ctf.metric.objectives': 'Objectives',
+        'ctf.metric.value': 'Value',
         'status.loadingMatches': 'Loading matches…',
         'status.noMatches': 'No matches stored.',
         'status.lastUpdated': 'Last refreshed: {timestamp}',
@@ -1002,6 +1108,84 @@ try {
 
     const RACE_MODE_KEYS = new Set(['gt_racing', 'gt_racing_dm', 'gt_team_racing', 'gt_team_racing_dm']);
     const DEATHMATCH_MODE_KEYS = new Set(['gt_deathmatch']);
+    const OBJECTIVE_MODE_KEYS = new Set(['gt_ctf', 'gt_ctf4', 'gt_elimination', 'gt_domination']);
+
+    const OBJECTIVE_METRIC_DEFINITIONS = {
+      captures: {
+        paths: [
+          'captures',
+          'flagCaptures',
+          'flags',
+          'stats.captures',
+          'stats.flags',
+          'result.captures',
+          'result.flags',
+          'summary.captures',
+          'totals.captures'
+        ],
+        keywords: ['capture', 'flag']
+      },
+      score: {
+        paths: [
+          'score',
+          'points',
+          'value',
+          'stats.score',
+          'stats.points',
+          'result.score',
+          'summary.score',
+          'summary.points',
+          'totals.score',
+          'totals.points'
+        ],
+        keywords: ['score', 'point']
+      },
+      objectives: {
+        paths: [
+          'objectives',
+          'objectiveScore',
+          'objectivePoints',
+          'stats.objectives',
+          'stats.objectiveScore',
+          'result.objectives',
+          'summary.objectives',
+          'totals.objectives'
+        ],
+        keywords: ['objective', 'domination']
+      },
+      wins: {
+        paths: [
+          'wins',
+          'roundsWon',
+          'roundWins',
+          'rounds',
+          'victories',
+          'stats.wins',
+          'stats.roundsWon',
+          'result.wins',
+          'summary.wins',
+          'totals.wins'
+        ],
+        keywords: ['win', 'round', 'elimination']
+      }
+    };
+
+    const OBJECTIVE_MODE_PRIORITY = {
+      gt_ctf: ['captures', 'score', 'objectives', 'wins'],
+      gt_ctf4: ['captures', 'score', 'objectives', 'wins'],
+      gt_elimination: ['wins', 'score', 'captures', 'objectives'],
+      gt_domination: ['objectives', 'score', 'captures', 'wins']
+    };
+
+    const OBJECTIVE_DEFAULT_PRIORITY = ['score', 'captures', 'objectives', 'wins'];
+
+    const OBJECTIVE_METRIC_LABEL_KEYS = {
+      captures: 'ctf.metric.captures',
+      score: 'ctf.metric.score',
+      objectives: 'ctf.metric.objectives',
+      wins: 'ctf.metric.wins',
+      value: 'ctf.metric.value'
+    };
 
     const state = {
       allMatches: [],
@@ -1011,12 +1195,15 @@ try {
       filteredLeaderboard: [],
       deathmatchLeaderboard: [],
       filteredDeathmatchLeaderboard: [],
+      objectiveLeaderboard: [],
+      filteredObjectiveLeaderboard: [],
       activeTab: 'leaderboard',
       language: 'de',
       statuses: {
         overview: { key: null, params: {}, isError: false },
         leaderboard: { key: null, params: {}, isError: false },
-        deathmatch: { key: null, params: {}, isError: false }
+        deathmatch: { key: null, params: {}, isError: false },
+        ctf: { key: null, params: {}, isError: false }
       }
 
     };
@@ -1046,10 +1233,17 @@ try {
       deathmatchModeFilter: document.getElementById('deathmatchModeFilter'),
       deathmatchMapFilter: document.getElementById('deathmatchMapFilter'),
       deathmatchPlayerSearch: document.getElementById('deathmatchPlayerSearch'),
+      ctfStatus: document.getElementById('ctfStatus'),
+      ctfBody: document.getElementById('ctfBody'),
+      ctfEmpty: document.getElementById('ctfEmpty'),
+      ctfModeFilter: document.getElementById('ctfModeFilter'),
+      ctfMapFilter: document.getElementById('ctfMapFilter'),
+      ctfPlayerSearch: document.getElementById('ctfPlayerSearch'),
       tabButtons: Array.from(document.querySelectorAll('[data-tab]')),
       tabPanels: {
         leaderboard: document.getElementById('tab-leaderboard'),
         deathmatch: document.getElementById('tab-deathmatch'),
+        ctf: document.getElementById('tab-ctf'),
         matches: document.getElementById('tab-matches')
 
       },
@@ -1153,6 +1347,9 @@ try {
       if (state.statuses.deathmatch.key) {
         setDeathmatchStatus(state.statuses.deathmatch.key, state.statuses.deathmatch.params, state.statuses.deathmatch.isError, false);
       }
+      if (state.statuses.ctf.key) {
+        setObjectiveStatus(state.statuses.ctf.key, state.statuses.ctf.params, state.statuses.ctf.isError, false);
+      }
     }
 
     function applyLanguage(lang) {
@@ -1185,6 +1382,14 @@ try {
       } else {
         elements.deathmatchBody.innerHTML = '';
         elements.deathmatchEmpty.hidden = true;
+      }
+      buildObjectiveLeaderboard();
+      updateObjectiveFilters();
+      if (state.objectiveLeaderboard.length) {
+        applyObjectiveFilters();
+      } else {
+        elements.ctfBody.innerHTML = '';
+        elements.ctfEmpty.hidden = true;
       }
       if (state.allMatches.length) {
         applyFilters();
@@ -1326,6 +1531,16 @@ try {
       elements.deathmatchStatus.classList.toggle('error', Boolean(isError));
       if (persist) {
         state.statuses.deathmatch = { key, params, isError };
+      }
+
+    }
+
+    function setObjectiveStatus(key, params = {}, isError = false, persist = true) {
+      const message = formatMessage(key, params);
+      elements.ctfStatus.textContent = message;
+      elements.ctfStatus.classList.toggle('error', Boolean(isError));
+      if (persist) {
+        state.statuses.ctf = { key, params, isError };
       }
 
     }
@@ -1927,6 +2142,35 @@ try {
       return { kills: safeKills, deaths: safeDeaths };
     }
 
+    function priorityIndex(type, priority) {
+      const index = priority.indexOf(type);
+      return index === -1 ? priority.length : index;
+    }
+
+    function extractObjectiveMetric(entry, modeKey) {
+      if (!entry || typeof entry !== 'object') {
+        return { value: null, type: null };
+      }
+      const priority = OBJECTIVE_MODE_PRIORITY[modeKey] || OBJECTIVE_DEFAULT_PRIORITY;
+      for (const type of priority) {
+        const definition = OBJECTIVE_METRIC_DEFINITIONS[type];
+        if (!definition) {
+          continue;
+        }
+        let value = null;
+        if (definition.paths) {
+          value = numericAtPaths(entry, definition.paths);
+        }
+        if (value === null && definition.keywords) {
+          value = searchNumericByKeywords(entry, definition.keywords);
+        }
+        if (value !== null) {
+          return { value: Math.max(0, value), type };
+        }
+      }
+      return { value: null, type: null };
+    }
+
     function buildLeaderboard() {
       const bestByKey = new Map();
 
@@ -2081,6 +2325,107 @@ try {
       state.filteredDeathmatchLeaderboard = state.deathmatchLeaderboard.slice();
     }
 
+    function buildObjectiveLeaderboard() {
+      const bestByKey = new Map();
+
+      for (const match of state.allMatches) {
+        const rawMode = extractMode(match);
+        const modeKey = canonicalMode(rawMode);
+        if (!OBJECTIVE_MODE_KEYS.has(modeKey)) {
+          continue;
+        }
+
+        const entries = extractScoreboardEntries(match);
+        if (entries.length === 0) {
+          continue;
+        }
+
+        const modeLabel = humanizeMode(rawMode);
+        const map = extractMap(match);
+        const mapKey = map.toLowerCase();
+        const matchId = extractMatchId(match);
+        const startedAt = extractStart(match);
+        const recordedAt = extractRecordedAtFromMatchId(matchId);
+        const priority = OBJECTIVE_MODE_PRIORITY[modeKey] || OBJECTIVE_DEFAULT_PRIORITY;
+
+        for (const entry of entries) {
+          const player = extractLeaderboardPlayer(entry);
+          if (!player) {
+            continue;
+          }
+
+          const metric = extractObjectiveMetric(entry, modeKey);
+          if (metric.value === null) {
+            continue;
+          }
+
+          const playerLower = player.toLowerCase();
+          const key = `${modeKey}||${mapKey}||${playerLower}`;
+          const current = bestByKey.get(key);
+          const metricPriority = priorityIndex(metric.type, priority);
+          const recordDate = recordedAt || startedAt;
+          const recordTime = recordDate instanceof Date ? recordDate.getTime() : 0;
+
+          let shouldUpdate = false;
+          if (!current) {
+            shouldUpdate = true;
+          } else if (metric.value > current.value) {
+            shouldUpdate = true;
+          } else if (metric.value === current.value) {
+            const currentPriority = priorityIndex(current.metricType, priority);
+            if (metricPriority < currentPriority) {
+              shouldUpdate = true;
+            } else if (metricPriority === currentPriority) {
+              const currentDate = current.recordedAt || current.startedAt;
+              const currentTime = currentDate instanceof Date ? currentDate.getTime() : 0;
+              if (recordTime > currentTime) {
+                shouldUpdate = true;
+              } else if (recordTime === currentTime && playerLower < current.playerLower) {
+                shouldUpdate = true;
+              }
+            }
+          }
+
+          if (shouldUpdate) {
+            bestByKey.set(key, {
+              player,
+              playerLower,
+              value: metric.value,
+              metricType: metric.type || 'value',
+              map,
+              mapKey,
+              mode: modeLabel,
+              modeKey,
+              matchId,
+              startedAt,
+              recordedAt
+            });
+          }
+        }
+      }
+
+      const locale = getLocale();
+      state.objectiveLeaderboard = Array.from(bestByKey.values()).sort((a, b) => {
+        if (b.value !== a.value) {
+          return b.value - a.value;
+        }
+        const metricPriorityA = priorityIndex(a.metricType, OBJECTIVE_MODE_PRIORITY[a.modeKey] || OBJECTIVE_DEFAULT_PRIORITY);
+        const metricPriorityB = priorityIndex(b.metricType, OBJECTIVE_MODE_PRIORITY[b.modeKey] || OBJECTIVE_DEFAULT_PRIORITY);
+        if (metricPriorityA !== metricPriorityB) {
+          return metricPriorityA - metricPriorityB;
+        }
+        const dateA = (a.recordedAt || a.startedAt);
+        const dateB = (b.recordedAt || b.startedAt);
+        const timeA = dateA instanceof Date ? dateA.getTime() : 0;
+        const timeB = dateB instanceof Date ? dateB.getTime() : 0;
+        if (timeA !== timeB) {
+          return timeB - timeA;
+        }
+        return a.player.localeCompare(b.player, locale);
+      });
+      state.filteredObjectiveLeaderboard = state.objectiveLeaderboard.slice();
+    }
+
     function populateSelect(select, defaultLabel, optionsMap, previousValue) {
       const fragment = document.createDocumentFragment();
       const defaultOption = document.createElement('option');
@@ -2167,6 +2512,34 @@ try {
       }
     }
 
+    function updateObjectiveFilters() {
+      const previousMode = elements.ctfModeFilter.value;
+      const previousMap = elements.ctfMapFilter.value;
+
+      const modeOptions = new Map();
+      const mapOptions = new Map();
+
+      for (const entry of state.objectiveLeaderboard) {
+        if (!modeOptions.has(entry.modeKey)) {
+          modeOptions.set(entry.modeKey, entry.mode);
+        }
+        if (!mapOptions.has(entry.mapKey)) {
+          mapOptions.set(entry.mapKey, entry.map);
+        }
+      }
+
+      populateSelect(elements.ctfModeFilter, t('filters.ctf.mode.all'), modeOptions, previousMode);
+      populateSelect(elements.ctfMapFilter, t('filters.ctf.map.all'), mapOptions, previousMap);
+
+      const hasEntries = state.objectiveLeaderboard.length > 0;
+      elements.ctfModeFilter.disabled = !hasEntries;
+      elements.ctfMapFilter.disabled = !hasEntries;
+      elements.ctfPlayerSearch.disabled = !hasEntries;
+      if (!hasEntries) {
+        elements.ctfPlayerSearch.value = '';
+      }
+    }
+
     function applyLeaderboardFilters() {
       const mode = elements.leaderboardModeFilter.value;
       const map = elements.leaderboardMapFilter.value;
@@ -2207,6 +2580,27 @@ try {
       });
 
       renderDeathmatchLeaderboard();
+    }
+
+    function applyObjectiveFilters() {
+      const mode = elements.ctfModeFilter.value;
+      const map = elements.ctfMapFilter.value;
+      const playerTerm = elements.ctfPlayerSearch.value.trim().toLowerCase();
+
+      state.filteredObjectiveLeaderboard = state.objectiveLeaderboard.filter((entry) => {
+        if (mode !== '__all' && entry.modeKey !== mode) {
+          return false;
+        }
+        if (map !== '__all' && entry.mapKey !== map) {
+          return false;
+        }
+        if (playerTerm && !entry.playerLower.includes(playerTerm)) {
+          return false;
+        }
+        return true;
+      });
+
+      renderObjectiveLeaderboard();
     }
 
     function renderLeaderboard() {
@@ -2332,6 +2726,73 @@ try {
       setDeathmatchStatus('deathmatch.status.count', {
         displayed: rows.length,
         total: state.deathmatchLeaderboard.length
+      });
+    }
+
+    function renderObjectiveLeaderboard() {
+      const rows = state.filteredObjectiveLeaderboard;
+      const hasEntries = state.objectiveLeaderboard.length > 0;
+
+      elements.ctfBody.innerHTML = '';
+
+      if (!hasEntries) {
+        elements.ctfEmpty.hidden = false;
+        elements.ctfEmpty.textContent = t('ctf.empty.noData');
+        setObjectiveStatus('ctf.status.noneData');
+        return;
+      }
+
+      if (!rows.length) {
+        elements.ctfEmpty.hidden = false;
+        elements.ctfEmpty.textContent = t('ctf.empty.noFilterMatches');
+        setObjectiveStatus('ctf.status.noFilterMatches');
+        return;
+      }
+
+      elements.ctfEmpty.hidden = true;
+      const markup = rows
+        .map((entry, index) => {
+          const rank = index + 1;
+          const recordDate = entry.recordedAt || entry.startedAt;
+          const dateLabel = recordDate ? formatter.format(recordDate) : '–';
+          const matchIdLabel = entry.matchId && entry.matchId !== t('common.unknown') ? entry.matchId : '';
+          const matchIdHtml = matchIdLabel
+            ? `<span class="mono" title="${escapeHtml(t('ctf.matchId.title'))}">${escapeHtml(matchIdLabel)}</span>`
+            : '';
+          const metricLabelKey = OBJECTIVE_METRIC_LABEL_KEYS[entry.metricType] || OBJECTIVE_METRIC_LABEL_KEYS.value;
+          const metricLabel = t(metricLabelKey);
+
+          return `
+          <tr>
+            <td>${rank}</td>
+            <td>
+              <div class="leaderboard-player">
+                <strong>${escapeHtml(entry.player)}</strong>
+              </div>
+            </td>
+            <td>
+              <div class="leaderboard-value">
+                <strong>${escapeHtml(formatCount(entry.value))}</strong>
+                <span>${escapeHtml(metricLabel)}</span>
+              </div>
+            </td>
+            <td>${escapeHtml(entry.map)}</td>
+            <td>${escapeHtml(entry.mode)}</td>
+            <td>
+              <div class="meta">
+                <span>${escapeHtml(dateLabel)}</span>
+                ${matchIdHtml}
+              </div>
+            </td>
+          </tr>
+        `;
+        })
+        .join('');
+
+      elements.ctfBody.innerHTML = markup;
+      setObjectiveStatus('ctf.status.count', {
+        displayed: rows.length,
+        total: state.objectiveLeaderboard.length
       });
     }
 
@@ -2542,6 +3003,7 @@ try {
       setStatus('status.loadingMatches');
       setLeaderboardStatus('leaderboard.status.loading');
       setDeathmatchStatus('deathmatch.status.loading');
+      setObjectiveStatus('ctf.status.loading');
 
       elements.refreshButton.disabled = true;
       try {
@@ -2570,6 +3032,10 @@ try {
         updateDeathmatchFilters();
         applyDeathmatchFilters();
 
+        buildObjectiveLeaderboard();
+        updateObjectiveFilters();
+        applyObjectiveFilters();
+
         applyFilters();
       } catch (error) {
         console.error(error);
@@ -2581,16 +3047,21 @@ try {
         state.filteredLeaderboard = [];
         state.deathmatchLeaderboard = [];
         state.filteredDeathmatchLeaderboard = [];
+        state.objectiveLeaderboard = [];
+        state.filteredObjectiveLeaderboard = [];
         updateModeFilter();
         updateSummary();
         updateLeaderboardFilters();
         renderLeaderboard();
         updateDeathmatchFilters();
         renderDeathmatchLeaderboard();
+        updateObjectiveFilters();
+        renderObjectiveLeaderboard();
         applyFilters();
 
         setLeaderboardStatus('leaderboard.status.error', { message: error.message }, true);
         setDeathmatchStatus('deathmatch.status.error', { message: error.message }, true);
+        setObjectiveStatus('ctf.status.error', { message: error.message }, true);
 
       } finally {
         elements.refreshButton.disabled = false;
@@ -2663,6 +3134,18 @@ try {
       applyDeathmatchFilters();
     });
 
+    elements.ctfModeFilter.addEventListener('change', () => {
+      applyObjectiveFilters();
+    });
+
+    elements.ctfMapFilter.addEventListener('change', () => {
+      applyObjectiveFilters();
+    });
+
+    elements.ctfPlayerSearch.addEventListener('input', () => {
+      applyObjectiveFilters();
+    });
+
     elements.modeFilter.addEventListener('change', () => {
       applyFilters();
     });
@@ -2699,6 +3182,7 @@ try {
     setStatus('status.loadingMatches');
     setLeaderboardStatus('leaderboard.status.waiting');
     setDeathmatchStatus('deathmatch.status.waiting');
+    setObjectiveStatus('ctf.status.waiting');
     setActiveTab(state.activeTab);
 
     loadMatches();
