@@ -681,11 +681,44 @@ try {
 
     <section class="panel tabbed-panel">
       <div class="tab-header" role="tablist" aria-label="Ansichten" data-i18n-aria-label="tabs.label">
+        <button class="tab-button" id="tab-button-matches" role="tab" aria-selected="false" aria-controls="tab-matches" data-tab="matches" data-i18n="tabs.matches">Matchübersicht</button>
         <button class="tab-button active" id="tab-button-leaderboard" role="tab" aria-selected="true" aria-controls="tab-leaderboard" data-tab="leaderboard" data-i18n="tabs.racing">RACING LEADERBOARD</button>
         <button class="tab-button" id="tab-button-deathmatch" role="tab" aria-selected="false" aria-controls="tab-deathmatch" data-tab="deathmatch" data-i18n="tabs.deathmatch">DEATHMATCH LEADERBOARD</button>
         <button class="tab-button" id="tab-button-elimination" role="tab" aria-selected="false" aria-controls="tab-elimination" data-tab="elimination" data-i18n="tabs.elimination">ELIMINATION LEADERBOARD</button>
         <button class="tab-button" id="tab-button-ctf" role="tab" aria-selected="false" aria-controls="tab-ctf" data-tab="ctf" data-i18n="tabs.ctf">CTF LEADERBOARD</button>
-        <button class="tab-button" id="tab-button-matches" role="tab" aria-selected="false" aria-controls="tab-matches" data-tab="matches" data-i18n="tabs.matches">Matchübersicht</button>
+      </div>
+
+      <div class="tab-panel" id="tab-matches" role="tabpanel" aria-labelledby="tab-button-matches">
+        <div class="controls match-controls">
+          <div>
+            <label for="modeFilter" data-i18n="filters.matches.mode.label">Spielmodus</label>
+            <select id="modeFilter">
+              <option value="__all" data-i18n="filters.matches.mode.all">Alle Modi</option>
+            </select>
+          </div>
+          <div>
+            <label for="searchInput" data-i18n="filters.matches.search.label">Suche</label>
+            <input type="search" id="searchInput" placeholder="Match-ID, Map oder Spieler…" autocomplete="off" data-i18n-placeholder="filters.matches.search.placeholder">
+          </div>
+          <div>
+            <label for="limitSelect" data-i18n="filters.matches.limit.label">Lade-Limit</label>
+            <select id="limitSelect">
+              <option value="100" selected>100</option>
+              <option value="250">250</option>
+              <option value="500">500</option>
+              <option value="all" data-i18n="filters.matches.limit.all">Alle</option>
+            </select>
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="refreshButton" type="button" data-i18n="filters.matches.refresh">Aktualisieren</button>
+            <p class="status" id="statusMessage"></p>
+          </div>
+        </div>
+        <div id="matches" aria-live="polite"></div>
+        <noscript>
+          <p class="empty-state" data-i18n="noscript.message">Bitte JavaScript aktivieren, um die gespeicherten Matches anzeigen zu können.</p>
+        </noscript>
       </div>
 
       <div class="tab-panel active" id="tab-leaderboard" role="tabpanel" aria-labelledby="tab-button-leaderboard">
@@ -841,46 +874,6 @@ try {
         </div>
         <p class="empty-state" id="ctfEmpty" hidden></p>
       </div>
-
-      <div class="tab-panel" id="tab-matches" role="tabpanel" aria-labelledby="tab-button-matches">
-        <div class="controls match-controls">
-          <div>
-
-            <label for="modeFilter" data-i18n="filters.matches.mode.label">Spielmodus</label>
-            <select id="modeFilter">
-              <option value="__all" data-i18n="filters.matches.mode.all">Alle Modi</option>
-            </select>
-          </div>
-          <div>
-            <label for="searchInput" data-i18n="filters.matches.search.label">Suche</label>
-            <input type="search" id="searchInput" placeholder="Match-ID, Map oder Spieler…" autocomplete="off" data-i18n-placeholder="filters.matches.search.placeholder">
-          </div>
-          <div>
-            <label for="limitSelect" data-i18n="filters.matches.limit.label">Lade-Limit</label>
-
-            <select id="limitSelect">
-              <option value="25">25</option>
-              <option value="50" selected>50</option>
-              <option value="100">100</option>
-              <option value="250">250</option>
-              <option value="500">500</option>
-            </select>
-          </div>
-          <div>
-            <label>&nbsp;</label>
-
-            <button id="refreshButton" type="button" data-i18n="filters.matches.refresh">Aktualisieren</button>
-            <p class="status" id="statusMessage"></p>
-
-          </div>
-        </div>
-        <div id="matches" aria-live="polite"></div>
-        <noscript>
-
-          <p class="empty-state" data-i18n="noscript.message">Bitte JavaScript aktivieren, um die gespeicherten Matches anzeigen zu können.</p>
-        </noscript>
-
-      </div>
     </section>
 
     <section class="panel">
@@ -943,6 +936,7 @@ try {
         'filters.matches.search.label': 'Suche',
         'filters.matches.search.placeholder': 'Match-ID, Map oder Spieler…',
         'filters.matches.limit.label': 'Lade-Limit',
+        'filters.matches.limit.all': 'Alle',
         'filters.matches.refresh': 'Aktualisieren',
         'leaderboard.headers.rank': 'Rang',
         'leaderboard.headers.player': 'Spieler',
@@ -1085,6 +1079,7 @@ try {
         'filters.matches.search.label': 'Search',
         'filters.matches.search.placeholder': 'Match ID, map, or player…',
         'filters.matches.limit.label': 'Load limit',
+        'filters.matches.limit.all': 'All',
         'filters.matches.refresh': 'Refresh',
         'leaderboard.headers.rank': 'Rank',
         'leaderboard.headers.player': 'Player',
@@ -1297,7 +1292,7 @@ try {
     const state = {
       allMatches: [],
       filteredMatches: [],
-      limit: 50,
+      limit: 100,
       leaderboard: [],
       filteredLeaderboard: [],
       deathmatchLeaderboard: [],
@@ -3259,8 +3254,17 @@ try {
       renderMatches();
     }
 
+    function resolveLimitSelection() {
+      const value = elements.limitSelect.value;
+      if (value === 'all') {
+        return 'all';
+      }
+      const numeric = parseInt(value, 10);
+      return numeric > 0 ? numeric : 100;
+    }
+
     async function loadMatches() {
-      state.limit = Number(elements.limitSelect.value) || 50;
+      state.limit = resolveLimitSelection();
 
       setStatus('status.loadingMatches');
       setLeaderboardStatus('leaderboard.status.loading');
@@ -3270,7 +3274,8 @@ try {
 
       elements.refreshButton.disabled = true;
       try {
-        const response = await fetch(`${API_BASE}/matches?limit=${state.limit}`);
+        const limitParam = state.limit === 'all' ? 'all' : String(state.limit);
+        const response = await fetch(`${API_BASE}/matches?limit=${encodeURIComponent(limitParam)}`);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -3561,8 +3566,13 @@ function handle_get(array $segments): void
         });
 
         $offset = isset($_GET['offset']) ? max(0, (int) $_GET['offset']) : 0;
-        $limit = isset($_GET['limit']) ? max(1, (int) $_GET['limit']) : 50;
-        $slice = array_slice($matches, $offset, $limit);
+        $limitParam = $_GET['limit'] ?? null;
+        if (is_string($limitParam) && strcasecmp($limitParam, 'all') === 0) {
+            $slice = array_slice($matches, $offset);
+        } else {
+            $limit = $limitParam !== null ? max(1, (int) $limitParam) : 100;
+            $slice = array_slice($matches, $offset, $limit);
+        }
 
         send_json(['matches' => array_values($slice)], 200);
         return;
