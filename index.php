@@ -60,7 +60,7 @@ try {
     }
 
     .page {
-      width: min(1100px, 100%);
+      width: min(1280px, 100%);
       display: flex;
       flex-direction: column;
       gap: 28px;
@@ -322,7 +322,7 @@ try {
 
     .mode-layout {
       display: grid;
-      grid-template-columns: minmax(220px, 320px) 1fr;
+      grid-template-columns: minmax(260px, 380px) minmax(0, 1fr);
       gap: 24px;
       align-items: flex-start;
     }
@@ -418,6 +418,11 @@ try {
       padding: 14px 18px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       text-align: left;
+    }
+
+    table.leaderboard-table th:last-child,
+    table.leaderboard-table td:last-child {
+      white-space: nowrap;
     }
 
     table.leaderboard-table tbody tr:last-child td {
@@ -839,6 +844,11 @@ try {
       { key: 'gt_ctf4', type: 'objective' },
       { key: 'gt_domination', type: 'objective' }
     ];
+
+    const LEVELSHOT_EXTENSIONS = ['webp', 'png', 'jpg', 'jpeg', 'tga'];
+    const levelshotAssetCache = new Map();
+    const levelshotMapCache = new Map();
+    let levelshotRequestCounter = 0;
 
     const I18N = {
       de: {
@@ -1837,30 +1847,42 @@ function renderModeTable(modeKey) {
   });
 }
 
-function updateLevelshot(modeKey, mapData) {
+async function updateLevelshot(modeKey, mapData) {
   const refs = modeElements.get(modeKey);
   if (!refs) {
     return;
   }
-      const mapName = mapData ? mapData.map : '';
-      const humanized = mapName ? humanizeMapName(mapName) : '';
-      refs.levelshotCaption.textContent = humanized;
-      refs.levelshot.alt = humanized || '';
+
+  const mapName = mapData ? mapData.map : '';
+  const humanized = mapName ? humanizeMapName(mapName) : '';
+  refs.levelshotCaption.textContent = humanized;
+  refs.levelshot.alt = humanized || '';
+
+  const requestId = `${modeKey}-${++levelshotRequestCounter}`;
+  refs.levelshot.dataset.requestId = requestId;
+  refs.levelshot.hidden = true;
+  refs.levelshotFallback.hidden = false;
+  refs.levelshot.removeAttribute('src');
+
   if (!mapData) {
-    refs.levelshot.hidden = true;
-    refs.levelshotFallback.hidden = false;
-    refs.levelshot.removeAttribute('src');
     return;
   }
-  const path = getLevelshotPath(mapData.map);
-  if (!path) {
+
+  try {
+    const resolved = await resolveLevelshotAsset(mapName);
+    if (refs.levelshot.dataset.requestId !== requestId) {
+      return;
+    }
+    if (!resolved || !resolved.src) {
+      refs.levelshot.hidden = true;
+      refs.levelshotFallback.hidden = false;
+      return;
+    }
+    refs.levelshot.src = resolved.src;
+  } catch (error) {
+    console.error('Failed to load levelshot', error);
     refs.levelshot.hidden = true;
     refs.levelshotFallback.hidden = false;
-    refs.levelshot.removeAttribute('src');
-    return;
-  }
-  if (refs.levelshot.src !== path) {
-    refs.levelshot.src = path;
   }
 }
 
@@ -1888,20 +1910,236 @@ function formatDate(value) {
   return formatter.format(value);
 }
 
-    function getLevelshotPath(mapName) {
-      if (typeof mapName !== 'string') {
-        return '';
+async function resolveLevelshotAsset(mapName) {
+  const mapKey = normalizeLevelshotKey(mapName);
+  if (mapKey && levelshotMapCache.has(mapKey)) {
+    return levelshotMapCache.get(mapKey);
+  }
+
+  const candidates = getLevelshotCandidates(mapName);
+  for (const candidate of candidates) {
+    if (levelshotAssetCache.has(candidate.cacheKey)) {
+      const cached = levelshotAssetCache.get(candidate.cacheKey);
+      if (cached) {
+        if (mapKey) {
+          levelshotMapCache.set(mapKey, cached);
+        }
+        return cached;
       }
-      const trimmed = mapName.trim();
-      if (!trimmed || trimmed === '–' || trimmed === '-') {
-        return '';
-      }
-      const base = trimmed.replace(/\.[^./\\]+$/, '');
-      if (!base) {
-        return '';
-      }
-      return `images/${encodeURIComponent(base.toLowerCase())}.tga`;
+      continue;
     }
+
+    try {
+      let resolved = null;
+      if (candidate.ext === 'tga') {
+        const dataUrl = await loadTgaAsDataUrl(candidate.url);
+        if (dataUrl) {
+          resolved = { src: dataUrl, isDataUrl: true };
+        }
+      } else {
+        await probeImageCandidate(candidate.url);
+        resolved = { src: candidate.url, isDataUrl: false };
+      }
+      if (resolved) {
+        levelshotAssetCache.set(candidate.cacheKey, resolved);
+        if (mapKey) {
+          levelshotMapCache.set(mapKey, resolved);
+        }
+        return resolved;
+      }
+      levelshotAssetCache.set(candidate.cacheKey, null);
+    } catch (error) {
+      levelshotAssetCache.set(candidate.cacheKey, null);
+    }
+  }
+
+  if (mapKey) {
+    levelshotMapCache.set(mapKey, null);
+  }
+  return null;
+}
+
+function getLevelshotCandidates(mapName) {
+  const { original, base } = extractMapBase(mapName);
+  const variants = new Set();
+  [original, base].forEach((value) => {
+    if (value) {
+      variants.add(value);
+      variants.add(value.toLowerCase());
+    }
+  });
+  const seen = new Set();
+  const candidates = [];
+  variants.forEach((variant) => {
+    LEVELSHOT_EXTENSIONS.forEach((ext) => {
+      const cacheKey = `${variant}|${ext}`;
+      if (!seen.has(cacheKey)) {
+        seen.add(cacheKey);
+        candidates.push({
+          url: `images/${encodeURIComponent(variant)}.${ext}`,
+          ext,
+          cacheKey
+        });
+      }
+    });
+  });
+  return candidates;
+}
+
+function normalizeLevelshotKey(mapName) {
+  const { base } = extractMapBase(mapName);
+  return base ? base.toLowerCase() : '';
+}
+
+function extractMapBase(mapName) {
+  if (typeof mapName !== 'string') {
+    return { original: '', base: '' };
+  }
+  const trimmed = mapName.trim();
+  if (!trimmed || trimmed === '–' || trimmed === '-') {
+    return { original: '', base: '' };
+  }
+  const withoutExtension = trimmed.replace(/\.[^./\\]+$/, '');
+  if (!withoutExtension) {
+    return { original: '', base: '' };
+  }
+  const segments = withoutExtension.split(/[\\/]/);
+  const base = segments[segments.length - 1] || withoutExtension;
+  return { original: withoutExtension, base };
+}
+
+async function probeImageCandidate(url) {
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    if (response.ok) {
+      return;
+    }
+    if (response.status !== 405) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+  } catch (error) {
+    const fallbackResponse = await fetch(url);
+    if (!fallbackResponse.ok) {
+      throw error;
+    }
+    return;
+  }
+
+  const fallbackResponse = await fetch(url);
+  if (!fallbackResponse.ok) {
+    throw new Error(`HTTP ${fallbackResponse.status}`);
+  }
+}
+
+async function loadTgaAsDataUrl(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  const buffer = await response.arrayBuffer();
+  if (buffer.byteLength < 18) {
+    throw new Error('Invalid TGA file');
+  }
+
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+  const idLength = view.getUint8(0);
+  const colorMapType = view.getUint8(1);
+  const imageType = view.getUint8(2);
+  const width = view.getUint16(12, true);
+  const height = view.getUint16(14, true);
+  const pixelDepth = view.getUint8(16);
+  const descriptor = view.getUint8(17);
+
+  if (!width || !height) {
+    throw new Error('Invalid TGA dimensions');
+  }
+  if (colorMapType !== 0) {
+    throw new Error('Unsupported TGA color map');
+  }
+  if (![2, 10].includes(imageType)) {
+    throw new Error('Unsupported TGA image type');
+  }
+  if (pixelDepth !== 24 && pixelDepth !== 32) {
+    throw new Error('Unsupported TGA pixel depth');
+  }
+
+  const bytesPerPixel = pixelDepth / 8;
+  let offset = 18 + idLength;
+  if (offset > bytes.length) {
+    throw new Error('Corrupted TGA file');
+  }
+
+  const totalPixels = width * height;
+  const pixels = new Uint8ClampedArray(totalPixels * 4);
+  const flipVertically = (descriptor & 0x20) === 0;
+  const flipHorizontally = (descriptor & 0x10) !== 0;
+
+  const setPixel = (index, r, g, b, a) => {
+    let x = index % width;
+    let y = Math.floor(index / width);
+    if (flipHorizontally) {
+      x = width - 1 - x;
+    }
+    if (flipVertically) {
+      y = height - 1 - y;
+    }
+    const dest = (y * width + x) * 4;
+    pixels[dest] = r;
+    pixels[dest + 1] = g;
+    pixels[dest + 2] = b;
+    pixels[dest + 3] = a;
+  };
+
+  const readColor = () => {
+    if (offset + bytesPerPixel > bytes.length) {
+      throw new Error('Unexpected end of TGA data');
+    }
+    const b = bytes[offset++];
+    const g = bytes[offset++];
+    const r = bytes[offset++];
+    const a = bytesPerPixel === 4 ? bytes[offset++] : 255;
+    return { r, g, b, a };
+  };
+
+  if (imageType === 2) {
+    for (let i = 0; i < totalPixels; i += 1) {
+      const color = readColor();
+      setPixel(i, color.r, color.g, color.b, color.a);
+    }
+  } else {
+    let pixelIndex = 0;
+    while (pixelIndex < totalPixels) {
+      if (offset >= bytes.length) {
+        throw new Error('Unexpected end of TGA data');
+      }
+      const packet = bytes[offset++];
+      const count = (packet & 0x7f) + 1;
+      if (packet & 0x80) {
+        const color = readColor();
+        for (let i = 0; i < count && pixelIndex < totalPixels; i += 1) {
+          setPixel(pixelIndex++, color.r, color.g, color.b, color.a);
+        }
+      } else {
+        for (let i = 0; i < count && pixelIndex < totalPixels; i += 1) {
+          const color = readColor();
+          setPixel(pixelIndex++, color.r, color.g, color.b, color.a);
+        }
+      }
+    }
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('Canvas API unavailable');
+  }
+  context.putImageData(new ImageData(pixels, width, height), 0, 0);
+  return canvas.toDataURL('image/png');
+}
 
 function humanizeMapName(map) {
   if (typeof map !== 'string') {
