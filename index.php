@@ -5,6 +5,7 @@
 declare(strict_types=1);
 
 const DATA_DIR = __DIR__ . '/data';
+const ARENA_DIR = __DIR__ . '/arena';
 
 if (!is_dir(DATA_DIR)) {
     if (!mkdir(DATA_DIR, 0775, true) && !is_dir(DATA_DIR)) {
@@ -1286,7 +1287,8 @@ const state = {
   eliminationLeaderboard: [],
   modeData: new Map(),
   selectedMaps: new Map(),
-      activeMode: MODE_CONFIG.length ? MODE_CONFIG[0].key : 'gt_racing',
+  mapMetadata: new Map(),
+  activeMode: MODE_CONFIG.length ? MODE_CONFIG[0].key : 'gt_racing',
   language: 'de',
   modeStatus: { key: null, params: {}, isError: false }
 };
@@ -2181,6 +2183,18 @@ function humanizeMapName(map) {
   if (!trimmed) {
     return t('map.unknown');
   }
+  if (state.mapMetadata instanceof Map && state.mapMetadata.size > 0) {
+    const normalizedKey = normalizeLevelshotKey(trimmed);
+    if (normalizedKey && state.mapMetadata.has(normalizedKey)) {
+      const displayName = state.mapMetadata.get(normalizedKey);
+      if (typeof displayName === 'string') {
+        const cleaned = displayName.trim();
+        if (cleaned) {
+          return cleaned;
+        }
+      }
+    }
+  }
   const base = trimmed.replace(/\.[^./\\]+$/, '');
   const normalized = base.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').toLowerCase();
   const locale = getLocale();
@@ -2535,9 +2549,51 @@ function updateSummary() {
   }
 }
 
-async function loadMatches() {
-    setModeStatus('mode.status.loading');
+async function fetchMapMetadata() {
+  const metadata = new Map();
   try {
+    const response = await fetch(`${API_BASE}/maps/metadata`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const payload = await response.json();
+    const mapEntries = payload && typeof payload === 'object' && payload.maps && typeof payload.maps === 'object'
+      ? payload.maps
+      : null;
+    if (!mapEntries) {
+      return metadata;
+    }
+    Object.entries(mapEntries).forEach(([rawKey, rawName]) => {
+      if (typeof rawName !== 'string') {
+        return;
+      }
+      const displayName = rawName.trim();
+      if (!displayName) {
+        return;
+      }
+      const normalizedKey = normalizeLevelshotKey(rawKey);
+      if (!normalizedKey) {
+        const { base } = extractMapBase(rawKey);
+        if (base) {
+          const fallbackKey = normalizeLevelshotKey(base);
+          if (fallbackKey) {
+            metadata.set(fallbackKey, displayName);
+          }
+        }
+        return;
+      }
+      metadata.set(normalizedKey, displayName);
+    });
+  } catch (error) {
+    console.warn('Failed to load map metadata', error);
+  }
+  return metadata;
+}
+
+async function loadMatches() {
+  setModeStatus('mode.status.loading');
+  try {
+    state.mapMetadata = new Map();
     const response = await fetch(`${API_BASE}/matches?limit=all`);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -2553,12 +2609,14 @@ async function loadMatches() {
       state.objectiveLeaderboard = [];
       state.eliminationLeaderboard = [];
       state.modeData = new Map();
+      state.mapMetadata = new Map();
       updateSummary();
       updateModeOptions();
       MODE_CONFIG.forEach(({ key }) => renderModeTable(key));
       setModeStatus('mode.status.empty');
       return;
     }
+    state.mapMetadata = await fetchMapMetadata();
     buildRaceLeaderboard();
     buildDeathmatchLeaderboard();
     buildObjectiveLeaderboard();
@@ -2575,6 +2633,7 @@ async function loadMatches() {
     state.objectiveLeaderboard = [];
     state.eliminationLeaderboard = [];
     state.modeData = new Map();
+    state.mapMetadata = new Map();
     updateSummary();
     updateModeOptions();
     MODE_CONFIG.forEach(({ key }) => renderModeTable(key));
@@ -3242,6 +3301,30 @@ function handle_post(array $segments): void
 
 function handle_get(array $segments): void
 {
+    if ($segments === ['maps', 'metadata']) {
+        $entries = load_arena_metadata();
+        $normalized = [];
+        foreach ($entries as $map => $longname) {
+            if (!is_string($map) || !is_string($longname)) {
+                continue;
+            }
+            $normalizedKey = normalize_map_key($map);
+            if ($normalizedKey === '') {
+                continue;
+            }
+            $label = trim($longname);
+            if ($label === '') {
+                continue;
+            }
+            $normalized[$normalizedKey] = $label;
+        }
+
+        ksort($normalized, SORT_NATURAL | SORT_FLAG_CASE);
+
+        send_json(['maps' => $normalized], 200);
+        return;
+    }
+
     if ($segments === ['matches']) {
         $matches = load_all_matches();
         $mode = $_GET['mode'] ?? null;
@@ -3311,6 +3394,98 @@ function handle_delete(array $segments): void
     }
 
     http_response_code(204);
+}
+
+function load_arena_metadata(): array
+{
+    if (!is_dir(ARENA_DIR)) {
+        return [];
+    }
+
+    $files = glob(ARENA_DIR . '/*.arena');
+    if ($files === false) {
+        return [];
+    }
+
+    $metadata = [];
+
+    foreach ($files as $file) {
+        if (!is_readable($file)) {
+            continue;
+        }
+
+        $handle = fopen($file, 'rb');
+        if ($handle === false) {
+            continue;
+        }
+
+        $currentMap = null;
+        $currentLongname = null;
+
+        while (($line = fgets($handle)) !== false) {
+            $cleanLine = trim($line);
+            if ($cleanLine === '' || strncmp($cleanLine, '//', 2) === 0) {
+                continue;
+            }
+
+            if (strpos($cleanLine, '{') !== false) {
+                $currentMap = null;
+                $currentLongname = null;
+            }
+
+            if (preg_match('/\bmap\s+"([^"]+)"/i', $cleanLine, $mapMatch) === 1) {
+                $currentMap = $mapMatch[1];
+            }
+
+            if (preg_match('/\blongname\s+"([^"]+)"/i', $cleanLine, $longnameMatch) === 1) {
+                $currentLongname = $longnameMatch[1];
+            }
+
+            if ($currentMap !== null && $currentLongname !== null) {
+                $mapKey = trim($currentMap);
+                $longname = trim($currentLongname);
+                if ($mapKey !== '' && $longname !== '') {
+                    $metadata[$mapKey] = $longname;
+                }
+                $currentMap = null;
+                $currentLongname = null;
+            }
+
+            if (strpos($cleanLine, '}') !== false) {
+                $currentMap = null;
+                $currentLongname = null;
+            }
+        }
+
+        fclose($handle);
+    }
+
+    return $metadata;
+}
+
+function normalize_map_key(string $map): string
+{
+    $trimmed = trim($map);
+    if ($trimmed === '') {
+        return '';
+    }
+
+    $withoutExtension = preg_replace('/\.[^\.\\\/]+$/', '', $trimmed);
+    if ($withoutExtension === null || $withoutExtension === '') {
+        $withoutExtension = $trimmed;
+    }
+
+    $segments = preg_split('/[\\\/]/', $withoutExtension);
+    if ($segments === false || $segments === []) {
+        $base = $withoutExtension;
+    } else {
+        $base = end($segments);
+        if ($base === false || $base === null || $base === '') {
+            $base = $withoutExtension;
+        }
+    }
+
+    return strtolower(trim((string) $base));
 }
 
 function load_all_matches(): array
