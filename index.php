@@ -2012,27 +2012,53 @@ function extractMapBase(mapName) {
   return { original: withoutExtension, base };
 }
 
+function isImageContentType(contentType) {
+  if (typeof contentType !== 'string') {
+    return false;
+  }
+  const normalized = contentType.split(';', 1)[0].trim().toLowerCase();
+  return normalized.startsWith('image/');
+}
+
 async function probeImageCandidate(url) {
+  let headResponse = null;
+  let headError = null;
   try {
-    const response = await fetch(url, { method: 'HEAD' });
-    if (response.ok) {
-      return;
-    }
-    if (response.status !== 405) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+    headResponse = await fetch(url, { method: 'HEAD' });
   } catch (error) {
-    const fallbackResponse = await fetch(url);
-    if (!fallbackResponse.ok) {
-      throw error;
-    }
-    return;
+    headError = error;
   }
 
-  const fallbackResponse = await fetch(url);
-  if (!fallbackResponse.ok) {
-    throw new Error(`HTTP ${fallbackResponse.status}`);
+  if (headResponse) {
+    if (headResponse.ok) {
+      const contentType = headResponse.headers.get('Content-Type');
+      if (isImageContentType(contentType)) {
+        return;
+      }
+      throw new Error(`Unsupported content type: ${contentType || 'unknown'}`);
+    }
+
+    if (headResponse.status !== 405) {
+      headError = new Error(`HTTP ${headResponse.status}`);
+    }
   }
+
+  let fallbackResponse;
+  try {
+    fallbackResponse = await fetch(url);
+  } catch (error) {
+    throw headError ?? error;
+  }
+
+  if (!fallbackResponse.ok) {
+    throw headError ?? new Error(`HTTP ${fallbackResponse.status}`);
+  }
+
+  const fallbackContentType = fallbackResponse.headers.get('Content-Type');
+  if (isImageContentType(fallbackContentType)) {
+    return;
+  }
+  throw new Error(`Unsupported content type: ${fallbackContentType || 'unknown'}`);
 }
 
 async function loadTgaAsDataUrl(url) {
