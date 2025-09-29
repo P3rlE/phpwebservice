@@ -1882,6 +1882,8 @@ async function updateLevelshot(modeKey, mapData) {
       refs.levelshotFallback.hidden = false;
       return;
     }
+    refs.levelshot.hidden = false;
+    refs.levelshotFallback.hidden = true;
     refs.levelshot.src = resolved.src;
   } catch (error) {
     console.error('Failed to load levelshot', error);
