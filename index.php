@@ -449,8 +449,9 @@ try {
 
     .leaderboard-player {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .leaderboard-player span {
@@ -2882,19 +2883,39 @@ function extractLeaderboardPlayer(entry) {
   return '';
 }
 
+function normalizeVehicleName(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  const text = String(value).trim();
+  if (text === '') {
+    return '';
+  }
+  const slashIndex = text.indexOf('/');
+  const base = (slashIndex === -1 ? text : text.slice(0, slashIndex)).trim();
+  if (base === '') {
+    return '';
+  }
+  const lower = base.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
 function extractVehicle(entry) {
   if (!entry || typeof entry !== 'object') {
     return '';
   }
-  const vehicle = firstString(entry, VEHICLE_PATH_CANDIDATES);
+  const vehicle = normalizeVehicleName(firstString(entry, VEHICLE_PATH_CANDIDATES));
   if (vehicle) {
     return vehicle;
   }
   if (entry.stats && typeof entry.stats === 'object') {
-    return firstString(entry.stats, VEHICLE_PATH_CANDIDATES);
+    const statsVehicle = normalizeVehicleName(firstString(entry.stats, VEHICLE_PATH_CANDIDATES));
+    if (statsVehicle) {
+      return statsVehicle;
+    }
   }
   if (entry.result && typeof entry.result === 'object') {
-    return firstString(entry.result, VEHICLE_PATH_CANDIDATES);
+    return normalizeVehicleName(firstString(entry.result, VEHICLE_PATH_CANDIDATES));
   }
   return '';
 }
