@@ -458,6 +458,21 @@ try {
       color: var(--text-muted);
     }
 
+    .bot-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px 3px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+      width: fit-content;
+    }
+
     .leaderboard-value {
       display: flex;
       flex-direction: column;
@@ -909,6 +924,8 @@ try {
         'leaderboard.headers.mode': 'Modus',
         'leaderboard.headers.vehicle': 'Fahrzeug',
         'leaderboard.headers.recorded': 'Aufgestellt am',
+        'leaderboard.player.botTag': 'Bot',
+        'leaderboard.player.botTooltip': 'Bestzeit von einem Bot erzielt',
         'deathmatch.headers.rank': 'Rang',
         'deathmatch.headers.player': 'Spieler',
         'deathmatch.headers.kdr': 'K/D',
@@ -1064,6 +1081,8 @@ try {
         'leaderboard.headers.mode': 'Mode',
         'leaderboard.headers.vehicle': 'Vehicle',
         'leaderboard.headers.recorded': 'Set on',
+        'leaderboard.player.botTag': 'Bot',
+        'leaderboard.player.botTooltip': 'Record set by a bot',
         'deathmatch.headers.rank': 'Rank',
         'deathmatch.headers.player': 'Player',
         'deathmatch.headers.kdr': 'K/D ratio',
@@ -1372,6 +1391,22 @@ const VEHICLE_PATH_CANDIDATES = [
   'ride',
   'stats.vehicle',
   'result.vehicle'
+];
+
+const BOT_PATH_CANDIDATES = [
+  'isBot',
+  'is_bot',
+  'bot',
+  'botPlayer',
+  'isAI',
+  'isAi',
+  'ai',
+  'stats.isBot',
+  'stats.is_bot',
+  'stats.bot',
+  'result.isBot',
+  'result.is_bot',
+  'result.bot'
 ];
 
 const SCOREBOARD_PATHS = [
@@ -1813,9 +1848,20 @@ function renderModeTable(modeKey) {
           td.textContent = String(index + 1);
           break;
         case 'player': {
+          td.classList.add('leaderboard-player');
           const strong = document.createElement('strong');
           strong.textContent = entry.player || t('common.unknown');
           td.appendChild(strong);
+          if (entry.isBot) {
+            const badge = document.createElement('span');
+            badge.className = 'bot-tag';
+            const tagText = t('leaderboard.player.botTag');
+            badge.textContent = tagText;
+            const tooltip = t('leaderboard.player.botTooltip');
+            badge.title = tooltip;
+            badge.setAttribute('aria-label', tooltip);
+            td.appendChild(badge);
+          }
           break;
         }
         case 'time':
@@ -2312,6 +2358,7 @@ function buildRaceLeaderboard() {
       }
       const key = `${modeKey}||${mapKey}||${player.toLowerCase()}`;
       const vehicle = extractVehicle(entry);
+      const isBot = extractIsBot(entry);
       const current = bestByKey.get(key);
       if (!current || seconds < current.time) {
         bestByKey.set(key, {
@@ -2325,7 +2372,8 @@ function buildRaceLeaderboard() {
           matchId,
           startedAt,
           recordedAt,
-          vehicle
+          vehicle,
+          isBot
         });
       }
     }
@@ -2384,6 +2432,7 @@ function buildDeathmatchLeaderboard() {
         (ratio === current.ratio && safeKills > current.kills) ||
         (ratio === current.ratio && safeKills === current.kills && safeDeaths < current.deaths);
       if (shouldUpdate) {
+        const isBot = extractIsBot(entry);
         bestByKey.set(key, {
           player,
           playerLower: player.toLowerCase(),
@@ -2396,7 +2445,8 @@ function buildDeathmatchLeaderboard() {
           modeKey,
           matchId,
           startedAt,
-          recordedAt
+          recordedAt,
+          isBot
         });
       }
     }
@@ -2473,6 +2523,7 @@ function buildObjectiveLeaderboard() {
         }
       }
       if (shouldUpdate) {
+        const isBot = extractIsBot(entry);
         targetMap.set(key, {
           player,
           playerLower,
@@ -2484,7 +2535,8 @@ function buildObjectiveLeaderboard() {
           modeKey,
           matchId,
           startedAt,
-          recordedAt
+          recordedAt,
+          isBot
         });
       }
     }
@@ -2847,6 +2899,20 @@ function extractVehicle(entry) {
   return '';
 }
 
+function extractIsBot(entry) {
+  if (!entry || typeof entry !== 'object') {
+    return false;
+  }
+  for (const path of BOT_PATH_CANDIDATES) {
+    const value = valueAtPath(entry, path);
+    const interpreted = interpretBoolean(value);
+    if (interpreted !== null) {
+      return interpreted;
+    }
+  }
+  return false;
+}
+
 function formatSeconds(seconds) {
   if (!Number.isFinite(seconds)) {
     return '–';
@@ -2968,6 +3034,54 @@ function parseNumericValue(value) {
     }
     const numeric = Number(normalized);
     return Number.isFinite(numeric) ? numeric : null;
+  }
+  return null;
+}
+
+function interpretBoolean(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value !== 0 : null;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+      return null;
+    }
+    if (
+      normalized === '1' ||
+      normalized === 'true' ||
+      normalized === 'yes' ||
+      normalized === 'y' ||
+      normalized === 'ja' ||
+      normalized === 'bot' ||
+      normalized === 'ai' ||
+      normalized === 'cpu' ||
+      normalized === 'computer' ||
+      normalized === 'on' ||
+      normalized === 't'
+    ) {
+      return true;
+    }
+    if (
+      normalized === '0' ||
+      normalized === 'false' ||
+      normalized === 'no' ||
+      normalized === 'n' ||
+      normalized === 'nein' ||
+      normalized === 'human' ||
+      normalized === 'player' ||
+      normalized === 'real' ||
+      normalized === 'off' ||
+      normalized === 'f'
+    ) {
+      return false;
+    }
   }
   return null;
 }
