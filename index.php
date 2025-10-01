@@ -22,11 +22,1009 @@ try {
     $script = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
     $path   = parse_url($uri, PHP_URL_PATH) ?? '/';
     $path   = rtrim($path, '/');
-    $isRoot = ($path === '' || $path === '/' || $path === $script);
+    $normalized = $path;
+    if ($script !== '' && strpos($normalized, $script) === 0) {
+        $normalized = substr($normalized, strlen($script));
+    }
+    $normalized = trim($normalized, '/');
+    $view = $normalized === 'servers' ? 'servers' : 'ladder';
+    $isFrontendRoute = ($view === 'ladder' && ($path === '' || $path === '/' || $path === $script)) || $view === 'servers';
 
-    if ($method === 'GET' && ($isRoot) && (strpos($accept, 'application/json') === false)) {
+    if ($method === 'GET' && $isFrontendRoute && (strpos($accept, 'application/json') === false)) {
         $apiBase = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
+        $serversBase = rtrim($apiBase, '/') . '/servers';
+        $assetBase = rtrim(str_replace('\\', '/', dirname($apiBase)), '/');
+        $assetPrefix = $assetBase === '' ? '' : $assetBase;
+        $flagDe = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1IDMiPjxyZWN0IHdpZHRoPSI1IiBoZWlnaHQ9IjMiIGZpbGw9IiNmZmNlMDAiLz48cmVjdCB3aWR0aD0iNSIgaGVpZ2h0PSIyIiBmaWxsPSIjZGQwMDAwIi8+PHJlY3Qgd2lkdGg9IjUiIGhlaWdodD0iMSIgZmlsbD0iIzAwMCIvPjwvc3ZnPg==';
+        $flagEn = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MCAzMCI+PGNsaXBQYXRoIGlkPSJhIj48cGF0aCBkPSJNMCAwaDYwdjMwSDB6Ii8+PC9jbGlwUGF0aD48Y2xpcFBhdGggaWQ9ImIiPjxwYXRoIGQ9Ik0zMCAxNUgwdjE1bDYwLTMwSDBWMGw2MCAzMEgzMHYxNUg2MFYwSDMwdjE1eiIvPjwvY2xpcFBhdGg+PGcgY2xpcC1wYXRoPSJ1cmwoI2EpIj48cGF0aCBkPSJNMCAwaDYwdjMwSDB6IiBmaWxsPSIjMDEyMTY5Ii8+PHBhdGggZD0iTTAgMGw2MCAzME02MCAwTDAgMzAiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI2IiBjbGlwLXBhdGg9InVybCgjYikiLz48cGF0aCBkPSJNMCAwbDYwIDMwTTYwIDBMMCAzMCIgc3Ryb2tlPSIjQzgxMDJFIiBzdHJva2Utd2lkdGg9IjQiIGNsaXAtcGF0aD0idXJsKCNiKSIvPjxwYXRoIGQ9Ik0zMCAwdjMwTTAgMTVoNjAiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxMCIvPjxwYXRoIGQ9Ik0zMCAwdjMwTTAgMTVoNjAiIHN0cm9rZT0iI0M4MTAyRSIgc3Ryb2tlLXdpZHRoPSI2Ii8+PC9nPjwvc3ZnPg==';
         header('Content-Type: text/html; charset=UTF-8');
+        if ($view === 'servers') {
+        ?>
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Q3Rally Serverbrowser</title>
+  <meta name="description" content="Live-Übersicht der zuletzt aufgezeichneten Q3Rally-Server.">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: radial-gradient(1200px 800px at 50% 0%, rgba(255,255,255,0.08), #05050c 60%);
+      --surface: rgba(18, 21, 33, 0.72);
+      --surface-strong: rgba(28, 31, 46, 0.92);
+      --border: rgba(255, 255, 255, 0.12);
+      --border-strong: rgba(255, 255, 255, 0.2);
+      --text: #F5F6FF;
+      --text-muted: #B7BCD6;
+      --accent: #5D8BFF;
+      --accent-soft: rgba(93, 139, 255, 0.18);
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 32px 18px 48px;
+    }
+
+    .page {
+      width: min(1280px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 26px;
+      box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(18px) saturate(120%);
+      -webkit-backdrop-filter: blur(18px) saturate(120%);
+    }
+
+    .hero {
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .hero-brand {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .hero-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero img {
+      width: 78px;
+      height: 78px;
+      object-fit: contain;
+      border-radius: 18px;
+      border: 1px solid var(--border-strong);
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .hero h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.7rem, 2.4vw, 2.15rem);
+      letter-spacing: 0.01em;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .badge-beta {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px 4px;
+      border-radius: 999px;
+      background: rgba(93, 139, 255, 0.18);
+      border: 1px solid rgba(93, 139, 255, 0.45);
+      color: var(--accent);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 52ch;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+    }
+
+    .language-toggle {
+      display: inline-flex;
+      gap: 10px;
+      padding: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .language-button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      line-height: 1;
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+
+    .language-button img {
+      display: block;
+      width: 26px;
+      height: 26px;
+      object-fit: contain;
+    }
+
+    .language-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .language-button.active {
+      box-shadow: inset 0 0 0 2px rgba(93, 139, 255, 0.55);
+      background: rgba(93, 139, 255, 0.18);
+    }
+
+    .main-nav {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 6px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      padding: 8px 16px;
+      border-radius: 12px;
+      transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+    }
+
+    .nav-link:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-link.active {
+      color: var(--text);
+      background: var(--accent-soft);
+      box-shadow: inset 0 0 0 1px rgba(93, 139, 255, 0.45);
+    }
+
+    .hero-stats {
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .hero-stats .stat {
+      min-width: 140px;
+      padding: 14px 18px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .hero-stats dt {
+      color: var(--text-muted);
+      font-weight: 500;
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    .hero-stats dd {
+      margin: 0;
+      font-weight: 600;
+      font-size: 1.15rem;
+    }
+
+    .controls {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      align-items: end;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      letter-spacing: 0.02em;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    select,
+    input[type="search"],
+    button:not(.tab-button) {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(8, 12, 24, 0.4);
+      color: inherit;
+      font: inherit;
+    }
+
+    button.primary {
+      background: linear-gradient(135deg, rgba(93, 139, 255, 0.85), rgba(99, 122, 255, 0.7));
+      border: 1px solid rgba(93, 139, 255, 0.6);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+
+    button.primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(32, 52, 120, 0.45);
+    }
+
+    button.primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .status {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(10, 15, 26, 0.75);
+    }
+
+    table.leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 560px;
+    }
+
+    table.leaderboard-table thead {
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    table.leaderboard-table th,
+    table.leaderboard-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    table.leaderboard-table td strong {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    table.leaderboard-table tbody tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    table.leaderboard-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px 3px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+      width: fit-content;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.88rem;
+      letter-spacing: 0.02em;
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        gap: 20px;
+      }
+
+      .hero-top {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .hero-brand {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .hero-info {
+        align-items: center;
+        text-align: center;
+      }
+
+      .hero-actions {
+        align-items: center;
+      }
+
+      .hero-stats {
+        justify-content: center;
+      }
+
+      .hero-stats .stat {
+        text-align: center;
+      }
+
+      table.leaderboard-table {
+        min-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="panel hero">
+      <div class="hero-top">
+        <div class="hero-brand">
+          <img src="<?= htmlspecialchars($assetPrefix . '/logo.png', ENT_QUOTES); ?>" alt="Q3Rally Logo" onerror="this.style.display='none'">
+          <div class="hero-info">
+            <h1 data-i18n-html="servers.hero.title">Q3Rally Serverbrowser <span class="badge-beta">beta</span></h1>
+            <p data-i18n="servers.hero.description">Zeigt die zuletzt erfassten Server aus den Ladder-Daten inklusive Spieler und Modi.</p>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <nav class="main-nav" aria-label="Bereiche" data-i18n-aria-label="nav.label">
+            <a class="nav-link" href="<?= htmlspecialchars($apiBase, ENT_QUOTES); ?>" data-i18n="nav.matches">Matches</a>
+            <a class="nav-link active" aria-current="page" href="<?= htmlspecialchars($serversBase, ENT_QUOTES); ?>" data-i18n="nav.servers">Serverbrowser</a>
+          </nav>
+          <div class="language-toggle" role="group" aria-label="Sprachauswahl" data-i18n-aria-label="language.toggleLabel">
+            <button class="language-button active" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="<?= htmlspecialchars($flagDe, ENT_QUOTES); ?>" alt=""></button>
+            <button class="language-button" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="<?= htmlspecialchars($flagEn, ENT_QUOTES); ?>" alt=""></button>
+          </div>
+        </div>
+      </div>
+      <p class="status" id="statusMessage"></p>
+      <dl class="hero-stats">
+        <div class="stat"><dt data-i18n="servers.stats.total">Server</dt><dd id="stat-servers">–</dd></div>
+        <div class="stat"><dt data-i18n="servers.stats.lastUpdate">Letztes Update</dt><dd id="stat-last">–</dd></div>
+        <div class="stat"><dt data-i18n="servers.stats.modes">Modi</dt><dd id="stat-modes">–</dd></div>
+        <div class="stat"><dt data-i18n="servers.stats.players">Spieler zuletzt</dt><dd id="stat-players">–</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel">
+      <div class="controls">
+        <div>
+          <label for="filterSearch" data-i18n="servers.filters.search.label">Suche</label>
+          <input type="search" id="filterSearch" data-i18n-placeholder="servers.filters.search.placeholder" placeholder="Server, Map oder Spieler…">
+        </div>
+        <div>
+          <label for="filterMode" data-i18n="servers.filters.mode.label">Spielmodus</label>
+          <select id="filterMode">
+            <option value="all" data-i18n="servers.filters.mode.all">Alle Modi</option>
+          </select>
+        </div>
+        <div>
+          <label for="refreshButton" data-i18n="servers.actions.refreshLabel">Aktualisieren</label>
+          <button type="button" id="refreshButton" class="primary" data-i18n="servers.actions.refresh">Neu laden</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="table-wrapper">
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th scope="col" data-i18n="servers.table.server">Server</th>
+              <th scope="col" data-i18n="servers.table.mode">Modus</th>
+              <th scope="col" data-i18n="servers.table.players">Spieler</th>
+              <th scope="col" data-i18n="servers.table.lastSeen">Zuletzt gesehen</th>
+            </tr>
+          </thead>
+          <tbody id="serverTableBody"></tbody>
+        </table>
+      </div>
+      <p class="empty-state" id="serverEmpty" hidden data-i18n="servers.empty">Keine Server gefunden. Passe die Filter an oder lade erneut.</p>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = <?= json_encode($apiBase, JSON_UNESCAPED_SLASHES); ?>;
+    const MODE_TRANSLATIONS = {
+      de: {
+        gt_racing: 'Rennen',
+        gt_racing_dm: 'Deathmatch Rennen',
+        gt_derby: 'Demolition Derby',
+        gt_lcs: 'Last Car Standing',
+        gt_elimination: 'Elimination',
+        gt_deathmatch: 'Deathmatch',
+        gt_team: 'Team Deathmatch',
+        gt_team_racing: 'Team Racing',
+        gt_team_racing_dm: 'Team Racing Deathmatch',
+        gt_ctf: 'Capture the Flag',
+        gt_ctf4: '4-Teams-CTF',
+        gt_domination: 'Domination'
+      },
+      en: {
+        gt_racing: 'Racing',
+        gt_racing_dm: 'Racing Deathmatch',
+        gt_derby: 'Demolition Derby',
+        gt_lcs: 'Last Car Standing',
+        gt_elimination: 'Elimination',
+        gt_deathmatch: 'Deathmatch',
+        gt_team: 'Team Deathmatch',
+        gt_team_racing: 'Team Racing',
+        gt_team_racing_dm: 'Team Racing Deathmatch',
+        gt_ctf: 'Capture the Flag',
+        gt_ctf4: '4-Team CTF',
+        gt_domination: 'Domination'
+      }
+    };
+
+    const I18N = {
+      de: {
+        'meta.title': 'Q3Rally Serverbrowser',
+        'meta.description': 'Live-Übersicht der zuletzt aufgezeichneten Q3Rally-Server.',
+        'servers.hero.title': 'Q3Rally Serverbrowser <span class="badge-beta">beta</span>',
+        'servers.hero.description': 'Zeigt die zuletzt erfassten Server aus den Ladder-Daten inklusive Spieler und Modi.',
+        'language.toggleLabel': 'Sprachauswahl',
+        'language.deLabel': 'Deutsch',
+        'language.enLabel': 'Englisch',
+        'nav.label': 'Bereiche',
+        'nav.matches': 'Matches',
+        'nav.servers': 'Serverbrowser',
+        'servers.stats.total': 'Server',
+        'servers.stats.lastUpdate': 'Letztes Update',
+        'servers.stats.modes': 'Modi',
+        'servers.stats.players': 'Spieler zuletzt',
+        'servers.filters.search.label': 'Suche',
+        'servers.filters.search.placeholder': 'Server, Map oder Spieler…',
+        'servers.filters.mode.label': 'Spielmodus',
+        'servers.filters.mode.all': 'Alle Modi',
+        'servers.actions.refreshLabel': 'Aktualisieren',
+        'servers.actions.refresh': 'Neu laden',
+        'servers.status.loading': 'Lade Serverliste…',
+        'servers.status.error': 'Serverliste konnte nicht geladen werden.',
+        'servers.empty': 'Keine Server gefunden. Passe die Filter an oder lade erneut.',
+        'servers.table.server': 'Server',
+        'servers.table.mode': 'Modus',
+        'servers.table.players': 'Spieler',
+        'servers.table.lastSeen': 'Zuletzt gesehen',
+        'servers.table.unknown': 'Unbekannter Server',
+        'servers.table.noPlayers': 'Keine Spieler erfasst',
+        'servers.table.playersShort': '{current}/{max} Spieler',
+        'servers.table.playersOnly': '{current} Spieler',
+        'servers.table.playerList': 'Spieler: {list}',
+        'servers.table.lastSeenAt': 'Zuletzt: {date}',
+        'servers.table.matchCount': '{count} Matches erfasst'
+      },
+      en: {
+        'meta.title': 'Q3Rally Server Browser',
+        'meta.description': 'Live overview of recently recorded Q3Rally servers.',
+        'servers.hero.title': 'Q3Rally Server Browser <span class="badge-beta">beta</span>',
+        'servers.hero.description': 'Shows the latest servers captured from ladder data including players and modes.',
+        'language.toggleLabel': 'Language selection',
+        'language.deLabel': 'German',
+        'language.enLabel': 'English',
+        'nav.label': 'Sections',
+        'nav.matches': 'Matches',
+        'nav.servers': 'Server Browser',
+        'servers.stats.total': 'Servers',
+        'servers.stats.lastUpdate': 'Last update',
+        'servers.stats.modes': 'Modes',
+        'servers.stats.players': 'Players seen',
+        'servers.filters.search.label': 'Search',
+        'servers.filters.search.placeholder': 'Server, map or player…',
+        'servers.filters.mode.label': 'Game mode',
+        'servers.filters.mode.all': 'All modes',
+        'servers.actions.refreshLabel': 'Refresh',
+        'servers.actions.refresh': 'Reload',
+        'servers.status.loading': 'Loading server list…',
+        'servers.status.error': 'Failed to load server list.',
+        'servers.empty': 'No servers found. Adjust the filters or try again.',
+        'servers.table.server': 'Server',
+        'servers.table.mode': 'Mode',
+        'servers.table.players': 'Players',
+        'servers.table.lastSeen': 'Last seen',
+        'servers.table.unknown': 'Unknown server',
+        'servers.table.noPlayers': 'No players recorded',
+        'servers.table.playersShort': '{current}/{max} players',
+        'servers.table.playersOnly': '{current} players',
+        'servers.table.playerList': 'Players: {list}',
+        'servers.table.lastSeenAt': 'Last seen: {date}',
+        'servers.table.matchCount': '{count} matches recorded'
+      }
+    };
+
+    const state = {
+      language: 'de',
+      servers: [],
+      search: '',
+      mode: 'all',
+      lastUpdated: null,
+      autoRefreshHandle: null
+    };
+
+    const elements = {
+      languageButtons: Array.from(document.querySelectorAll('.language-button')),
+      status: document.getElementById('statusMessage'),
+      tableBody: document.getElementById('serverTableBody'),
+      empty: document.getElementById('serverEmpty'),
+      search: document.getElementById('filterSearch'),
+      mode: document.getElementById('filterMode'),
+      refresh: document.getElementById('refreshButton'),
+      statServers: document.getElementById('stat-servers'),
+      statLast: document.getElementById('stat-last'),
+      statModes: document.getElementById('stat-modes'),
+      statPlayers: document.getElementById('stat-players')
+    };
+
+    function getLocale(lang = state.language) {
+      return lang === 'de' ? 'de-DE' : 'en-US';
+    }
+
+    let dateFormatter = new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium', timeStyle: 'short' });
+
+    function translateWithFallback(key, lang = state.language) {
+      const primary = I18N[lang] || {};
+      if (Object.prototype.hasOwnProperty.call(primary, key)) {
+        return primary[key];
+      }
+      if (lang !== 'en' && I18N.en && Object.prototype.hasOwnProperty.call(I18N.en, key)) {
+        return I18N.en[key];
+      }
+      if (lang !== 'de' && I18N.de && Object.prototype.hasOwnProperty.call(I18N.de, key)) {
+        return I18N.de[key];
+      }
+      return key;
+    }
+
+    function t(key, params = {}) {
+      const template = translateWithFallback(key);
+      if (typeof template !== 'string') {
+        return key;
+      }
+      return template.replace(/\{(\w+)\}/g, (match, token) => {
+        if (Object.prototype.hasOwnProperty.call(params, token)) {
+          return String(params[token]);
+        }
+        return match;
+      });
+    }
+
+    function applyStaticTranslations() {
+      document.title = t('meta.title');
+      const description = document.querySelector('meta[name="description"]');
+      if (description) {
+        description.setAttribute('content', t('meta.description'));
+      }
+      document.querySelectorAll('[data-i18n]').forEach((element) => {
+        const key = element.dataset.i18n;
+        if (key) {
+          element.textContent = t(key);
+        }
+      });
+      document.querySelectorAll('[data-i18n-html]').forEach((element) => {
+        const key = element.dataset.i18nHtml;
+        if (key) {
+          element.innerHTML = t(key);
+        }
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach((element) => {
+        const key = element.dataset.i18nPlaceholder;
+        if (key) {
+          element.setAttribute('placeholder', t(key));
+        }
+      });
+      document.querySelectorAll('[data-i18n-title]').forEach((element) => {
+        const key = element.dataset.i18nTitle;
+        if (key) {
+          element.setAttribute('title', t(key));
+        }
+      });
+      document.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
+        const key = element.dataset.i18nAriaLabel;
+        if (key) {
+          element.setAttribute('aria-label', t(key));
+        }
+      });
+    }
+
+    function updateLanguageButtons() {
+      elements.languageButtons.forEach((button) => {
+        const isActive = button.dataset.lang === state.language;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-pressed', String(isActive));
+      });
+    }
+
+    function setLanguage(lang) {
+      if (state.language === lang) {
+        return;
+      }
+      state.language = lang;
+      document.documentElement.lang = lang === 'de' ? 'de' : 'en';
+      dateFormatter = new Intl.DateTimeFormat(getLocale(), { dateStyle: 'medium', timeStyle: 'short' });
+      applyStaticTranslations();
+      updateLanguageButtons();
+      updateModeOptions();
+      render();
+    }
+
+    function escapeHtml(value) {
+      if (value == null) {
+        return '';
+      }
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function normalizeServer(raw) {
+      const name = typeof raw.name === 'string' && raw.name.trim() !== '' ? raw.name.trim() : null;
+      const address = typeof raw.address === 'string' && raw.address.trim() !== '' ? raw.address.trim() : null;
+      const mode = typeof raw.mode === 'string' && raw.mode.trim() !== '' ? raw.mode.trim() : null;
+      const map = typeof raw.map === 'string' && raw.map.trim() !== '' ? raw.map.trim() : null;
+      const lastSeen = typeof raw.lastSeen === 'string' && raw.lastSeen.trim() !== '' ? raw.lastSeen : null;
+      const playerCount = Number.isFinite(raw.playerCount) ? raw.playerCount : null;
+      const maxPlayers = Number.isFinite(raw.maxPlayers) ? raw.maxPlayers : null;
+      const players = Array.isArray(raw.players)
+        ? raw.players
+            .filter((entry) => typeof entry === 'string' && entry.trim() !== '')
+            .map((entry) => entry.trim())
+        : [];
+      const country = typeof raw.country === 'string' && raw.country.trim() !== '' ? raw.country.trim() : null;
+      const lastMatchId = typeof raw.lastMatchId === 'string' && raw.lastMatchId.trim() !== '' ? raw.lastMatchId.trim() : null;
+      const matchCount = Number.isFinite(raw.matchCount) ? raw.matchCount : null;
+      return {
+        name,
+        address,
+        mode,
+        map,
+        lastSeen,
+        playerCount,
+        maxPlayers,
+        players,
+        country,
+        lastMatchId,
+        matchCount
+      };
+    }
+
+    function setStatus(key, params = {}) {
+      const message = key ? t(key, params) : '';
+      elements.status.textContent = message;
+    }
+
+    function updateStats(filteredServers) {
+      elements.statServers.textContent = filteredServers.length > 0 ? String(filteredServers.length) : '–';
+      if (state.lastUpdated) {
+        const date = new Date(state.lastUpdated);
+        if (!Number.isNaN(date.getTime())) {
+          elements.statLast.textContent = dateFormatter.format(date);
+        } else {
+          elements.statLast.textContent = '–';
+        }
+      } else {
+        elements.statLast.textContent = '–';
+      }
+
+      const uniqueModes = new Set();
+      filteredServers.forEach((server) => {
+        if (server.mode) {
+          uniqueModes.add(server.mode);
+        }
+      });
+      elements.statModes.textContent = uniqueModes.size > 0 ? String(uniqueModes.size) : '–';
+
+      const players = new Set();
+      filteredServers.forEach((server) => {
+        server.players.forEach((player) => {
+          players.add(player.toLowerCase());
+        });
+      });
+      elements.statPlayers.textContent = players.size > 0 ? String(players.size) : '–';
+    }
+
+    function humanizeMode(mode) {
+      if (!mode) {
+        return '';
+      }
+      const translations = MODE_TRANSLATIONS[state.language] || {};
+      if (Object.prototype.hasOwnProperty.call(translations, mode)) {
+        return translations[mode];
+      }
+      const fallback = MODE_TRANSLATIONS.en || {};
+      if (Object.prototype.hasOwnProperty.call(fallback, mode)) {
+        return fallback[mode];
+      }
+      return mode;
+    }
+
+    function formatPlayers(server) {
+      if (server.playerCount == null && server.players.length === 0) {
+        return t('servers.table.noPlayers');
+      }
+      const current = server.playerCount != null ? server.playerCount : server.players.length;
+      if (server.maxPlayers != null && server.maxPlayers > 0) {
+        return t('servers.table.playersShort', { current, max: server.maxPlayers });
+      }
+      return t('servers.table.playersOnly', { current });
+    }
+
+    function formatLastSeen(server) {
+      if (!server.lastSeen) {
+        return '–';
+      }
+      const date = new Date(server.lastSeen);
+      if (Number.isNaN(date.getTime())) {
+        return server.lastSeen;
+      }
+      return dateFormatter.format(date);
+    }
+
+    function render() {
+      const searchTerm = state.search.trim().toLowerCase();
+      const filtered = state.servers.filter((server) => {
+        if (state.mode !== 'all' && server.mode !== state.mode) {
+          return false;
+        }
+        if (searchTerm === '') {
+          return true;
+        }
+        const haystack = [
+          server.name || '',
+          server.address || '',
+          server.map || '',
+          server.mode || '',
+          server.players.join(' ')
+        ]
+          .join(' ')
+          .toLowerCase();
+        return haystack.includes(searchTerm);
+      });
+
+      elements.tableBody.innerHTML = '';
+      if (filtered.length === 0) {
+        elements.empty.hidden = false;
+      } else {
+        elements.empty.hidden = true;
+        filtered
+          .slice()
+          .sort((a, b) => {
+            const dateA = a.lastSeen ? new Date(a.lastSeen).getTime() : 0;
+            const dateB = b.lastSeen ? new Date(b.lastSeen).getTime() : 0;
+            return dateB - dateA;
+          })
+          .forEach((server) => {
+            const row = document.createElement('tr');
+            const displayName = server.name || t('servers.table.unknown');
+            const displayMode = humanizeMode(server.mode);
+            const players = formatPlayers(server);
+            const lastSeen = formatLastSeen(server);
+            const details = [];
+            if (server.address) {
+              details.push(`<span class="mono">${escapeHtml(server.address)}</span>`);
+            }
+            if (server.map) {
+              details.push(`<span>${escapeHtml(server.map)}</span>`);
+            }
+            if (server.players.length > 0) {
+              details.push(`<span>${escapeHtml(t('servers.table.playerList', { list: server.players.join(', ') }))}</span>`);
+            }
+            if (server.lastMatchId) {
+              details.push(`<span>${escapeHtml(server.lastMatchId)}</span>`);
+            }
+            const lastDetails = [];
+            if (lastSeen) {
+              lastDetails.push(`<span>${escapeHtml(lastSeen)}</span>`);
+            }
+            if (server.matchCount != null) {
+              lastDetails.push(`<span>${escapeHtml(t('servers.table.matchCount', { count: server.matchCount }))}</span>`);
+            }
+            row.innerHTML = `
+              <td>
+                <strong>${escapeHtml(displayName)}</strong>
+                <div class="meta">${details.join('')}</div>
+              </td>
+              <td>${escapeHtml(displayMode)}</td>
+              <td>${escapeHtml(players)}</td>
+              <td>
+                <div class="meta">${lastDetails.join('')}</div>
+              </td>
+            `;
+            elements.tableBody.appendChild(row);
+          });
+      }
+
+      updateStats(filtered);
+    }
+
+    async function fetchServers() {
+      try {
+        setStatus('servers.status.loading');
+        const response = await fetch(`${API_BASE}/servers`, {
+          headers: {
+            Accept: 'application/json'
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Unexpected response');
+        }
+        const payload = await response.json();
+        const list = Array.isArray(payload.servers) ? payload.servers : [];
+        state.servers = list.map(normalizeServer);
+        state.lastUpdated = typeof payload.generatedAt === 'string' ? payload.generatedAt : new Date().toISOString();
+        updateModeOptions();
+        setStatus('');
+        render();
+      } catch (error) {
+        console.error(error);
+        setStatus('servers.status.error');
+      }
+    }
+
+    function updateModeOptions() {
+      const existing = new Set(['all']);
+      const currentValue = elements.mode.value;
+      elements.mode.innerHTML = '';
+      const allOption = document.createElement('option');
+      allOption.value = 'all';
+      allOption.textContent = t('servers.filters.mode.all');
+      elements.mode.appendChild(allOption);
+      const modes = [];
+      state.servers.forEach((server) => {
+        if (server.mode && !existing.has(server.mode)) {
+          existing.add(server.mode);
+          modes.push(server.mode);
+        }
+      });
+      modes
+        .sort((a, b) => humanizeMode(a).localeCompare(humanizeMode(b), getLocale()))
+        .forEach((mode) => {
+          const option = document.createElement('option');
+          option.value = mode;
+          option.textContent = humanizeMode(mode);
+          elements.mode.appendChild(option);
+        });
+      if (existing.has(currentValue)) {
+        elements.mode.value = currentValue;
+        state.mode = currentValue;
+      } else {
+        state.mode = 'all';
+      }
+    }
+
+    function setupEventListeners() {
+      elements.languageButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const lang = button.dataset.lang;
+          if (lang) {
+            setLanguage(lang);
+          }
+        });
+      });
+
+      elements.search.addEventListener('input', (event) => {
+        state.search = event.target.value || '';
+        render();
+      });
+
+      elements.mode.addEventListener('change', () => {
+        state.mode = elements.mode.value;
+        render();
+      });
+
+      elements.refresh.addEventListener('click', () => {
+        fetchServers();
+      });
+    }
+
+    function setupAutoRefresh() {
+      if (state.autoRefreshHandle) {
+        clearInterval(state.autoRefreshHandle);
+      }
+      state.autoRefreshHandle = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          fetchServers();
+        }
+      }, 60000);
+    }
+
+    applyStaticTranslations();
+    updateLanguageButtons();
+    setupEventListeners();
+    setupAutoRefresh();
+    fetchServers();
+  </script>
+</body>
+</html>
+<?php
+            exit;
+        }
         ?>
 <!doctype html>
 <html lang="de">
@@ -145,6 +1143,13 @@ try {
       max-width: 52ch;
     }
 
+    .hero-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+    }
+
     .language-toggle {
       display: inline-flex;
       gap: 10px;
@@ -185,6 +1190,39 @@ try {
     .language-button.active {
       box-shadow: inset 0 0 0 2px rgba(93, 139, 255, 0.55);
       background: rgba(93, 139, 255, 0.18);
+    }
+
+    .main-nav {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 6px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      padding: 8px 16px;
+      border-radius: 12px;
+      transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+    }
+
+    .nav-link:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-link.active {
+      color: var(--text);
+      background: var(--accent-soft);
+      box-shadow: inset 0 0 0 1px rgba(93, 139, 255, 0.45);
     }
 
     .hero-stats {
@@ -494,6 +1532,9 @@ try {
     @media (max-width: 720px) {
       table.leaderboard-table {
         min-width: 100%;
+      }
+      .hero-actions {
+        align-items: center;
       }
     }
 
@@ -808,18 +1849,23 @@ try {
 
       <div class="hero-top">
         <div class="hero-brand">
-          <img src="logo.png" alt="Q3Rally Logo" onerror="this.style.display='none'">
+          <img src="<?= htmlspecialchars($assetPrefix . '/logo.png', ENT_QUOTES); ?>" alt="Q3Rally Logo" onerror="this.style.display='none'">
           <div class="hero-info">
             <h1 data-i18n-html="hero.title">Q3Rally Ladder Monitor <span class="badge-beta">beta</span></h1>
             <p data-i18n-html="hero.description">Direkte Vorschau der besten Platzierungen je Spielmodus und Map. Wähle oben einen Modus und vergleiche die Top 10 pro Strecke – inklusive Levelshot-Vorschau.</p>
           </div>
         </div>
-        <div class="language-toggle" role="group" aria-label="Sprachauswahl" data-i18n-aria-label="language.toggleLabel">
-          <button class="language-button active" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="de.png" alt=""></button>
-          <button class="language-button" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="en.png" alt=""></button>
-
+        <div class="hero-actions">
+          <nav class="main-nav" aria-label="Bereiche" data-i18n-aria-label="nav.label">
+            <a class="nav-link active" aria-current="page" href="<?= htmlspecialchars($apiBase, ENT_QUOTES); ?>" data-i18n="nav.matches">Matches</a>
+            <a class="nav-link" href="<?= htmlspecialchars($serversBase, ENT_QUOTES); ?>" data-i18n="nav.servers">Serverbrowser</a>
+          </nav>
+            <div class="language-toggle" role="group" aria-label="Sprachauswahl" data-i18n-aria-label="language.toggleLabel">
+              <button class="language-button active" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="<?= htmlspecialchars($flagDe, ENT_QUOTES); ?>" alt=""></button>
+              <button class="language-button" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="<?= htmlspecialchars($flagEn, ENT_QUOTES); ?>" alt=""></button>
+          </div>
         </div>
-        <p class="empty-state" id="leaderboardEmpty" hidden>Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.</p>
+        <p class="empty-state" id="leaderboardEmpty" hidden data-i18n="matches.empty">Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.</p>
       </div>
 
       <dl class="hero-stats">
@@ -876,6 +1922,9 @@ try {
         'language.toggleLabel': 'Sprachauswahl',
         'language.deLabel': 'Deutsch',
         'language.enLabel': 'Englisch',
+        'nav.label': 'Bereiche',
+        'nav.matches': 'Matches',
+        'nav.servers': 'Serverbrowser',
         'tabs.label': 'Spielmodi',
         'tabs.racing': 'RACING LEADERBOARD',
         'tabs.deathmatch': 'DEATHMATCH LEADERBOARD',
@@ -917,6 +1966,7 @@ try {
         'filters.matches.limit.label': 'Lade-Limit',
         'filters.matches.limit.all': 'Alle',
         'filters.matches.refresh': 'Aktualisieren',
+        'matches.empty': 'Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.',
         'leaderboard.headers.rank': 'Rang',
         'leaderboard.headers.player': 'Spieler',
         'leaderboard.headers.time': 'Zeit',
@@ -1033,6 +2083,9 @@ try {
         'language.toggleLabel': 'Language selection',
         'language.deLabel': 'German',
         'language.enLabel': 'English',
+        'nav.label': 'Sections',
+        'nav.matches': 'Matches',
+        'nav.servers': 'Server Browser',
         'tabs.label': 'Game modes',
         'tabs.racing': 'RACING LEADERBOARD',
         'tabs.deathmatch': 'DEATHMATCH LEADERBOARD',
@@ -1074,6 +2127,7 @@ try {
         'filters.matches.limit.label': 'Load limit',
         'filters.matches.limit.all': 'All',
         'filters.matches.refresh': 'Refresh',
+        'matches.empty': 'No best times found. Load more racing matches or adjust the filters.',
         'leaderboard.headers.rank': 'Rank',
         'leaderboard.headers.player': 'Player',
         'leaderboard.headers.time': 'Time',
@@ -3644,6 +4698,12 @@ function handle_get(array $segments): void
         return;
     }
 
+    if ($segments === ['servers']) {
+        $payload = build_server_overview();
+        send_json($payload, 200);
+        return;
+    }
+
     if ($segments === ['matches']) {
         $matches = load_all_matches();
         $mode = $_GET['mode'] ?? null;
@@ -3713,6 +4773,640 @@ function handle_delete(array $segments): void
     }
 
     http_response_code(204);
+}
+
+function build_server_overview(): array
+{
+    $matches = load_all_matches();
+    $servers = [];
+
+    foreach ($matches as $match) {
+        if (!is_array($match)) {
+            continue;
+        }
+
+        $info = extract_server_info_from_match($match);
+        if ($info === null) {
+            continue;
+        }
+
+        $key = $info['key'];
+        if (!isset($servers[$key])) {
+            $servers[$key] = [
+                'name' => $info['name'],
+                'address' => $info['address'],
+                'ip' => $info['ip'],
+                'port' => $info['port'],
+                'mode' => $info['mode'],
+                'map' => $info['map'],
+                'country' => $info['country'],
+                'players' => $info['players'],
+                'playerCount' => $info['playerCount'],
+                'maxPlayers' => $info['maxPlayers'],
+                'lastSeenTs' => $info['lastSeenTs'],
+                'lastSeenRaw' => $info['lastSeenRaw'],
+                'lastMatchId' => $info['matchId'],
+                'matchCount' => 1,
+            ];
+            continue;
+        }
+
+        $existing = &$servers[$key];
+        $existing['matchCount'] = ($existing['matchCount'] ?? 0) + 1;
+
+        if ($existing['name'] === null && $info['name'] !== null) {
+            $existing['name'] = $info['name'];
+        }
+        if ($existing['address'] === null && $info['address'] !== null) {
+            $existing['address'] = $info['address'];
+        }
+        if ($existing['ip'] === null && $info['ip'] !== null) {
+            $existing['ip'] = $info['ip'];
+        }
+        if ($existing['port'] === null && $info['port'] !== null) {
+            $existing['port'] = $info['port'];
+        }
+        if ($existing['country'] === null && $info['country'] !== null) {
+            $existing['country'] = $info['country'];
+        }
+        if ($info['mode'] !== null && $existing['mode'] === null) {
+            $existing['mode'] = $info['mode'];
+        }
+        if ($info['map'] !== null && $existing['map'] === null) {
+            $existing['map'] = $info['map'];
+        }
+
+        if ($info['maxPlayers'] !== null) {
+            if ($existing['maxPlayers'] === null) {
+                $existing['maxPlayers'] = $info['maxPlayers'];
+            } else {
+                $existing['maxPlayers'] = max((int) $existing['maxPlayers'], (int) $info['maxPlayers']);
+            }
+        }
+
+        if ($info['playerCount'] !== null) {
+            if ($existing['playerCount'] === null) {
+                $existing['playerCount'] = $info['playerCount'];
+            } else {
+                $existing['playerCount'] = max((int) $existing['playerCount'], (int) $info['playerCount']);
+            }
+        }
+
+        $existing['players'] = merge_player_lists($existing['players'], $info['players']);
+
+        if ($info['lastSeenTs'] !== null && ($existing['lastSeenTs'] === null || $info['lastSeenTs'] > $existing['lastSeenTs'])) {
+            $existing['lastSeenTs'] = $info['lastSeenTs'];
+            $existing['lastSeenRaw'] = $info['lastSeenRaw'];
+            $existing['lastMatchId'] = $info['matchId'];
+            if ($info['mode'] !== null) {
+                $existing['mode'] = $info['mode'];
+            }
+            if ($info['map'] !== null) {
+                $existing['map'] = $info['map'];
+            }
+        }
+
+        unset($existing);
+    }
+
+    $result = [];
+    foreach ($servers as $server) {
+        $players = normalize_player_list($server['players']);
+        $playerCount = $server['playerCount'];
+        if ($playerCount === null && $players !== []) {
+            $playerCount = count($players);
+        }
+
+        $lastSeen = null;
+        if ($server['lastSeenTs'] !== null) {
+            $lastSeen = gmdate('c', $server['lastSeenTs']);
+        } elseif (is_string($server['lastSeenRaw']) && trim($server['lastSeenRaw']) !== '') {
+            $lastSeen = $server['lastSeenRaw'];
+        }
+
+        $result[] = [
+            'name' => $server['name'],
+            'address' => $server['address'],
+            'ip' => $server['ip'],
+            'port' => $server['port'],
+            'mode' => $server['mode'],
+            'map' => $server['map'],
+            'country' => $server['country'],
+            'players' => $players,
+            'playerCount' => $playerCount,
+            'maxPlayers' => $server['maxPlayers'],
+            'lastSeen' => $lastSeen,
+            'lastMatchId' => $server['lastMatchId'],
+            'matchCount' => $server['matchCount'],
+        ];
+    }
+
+    usort($result, static function (array $a, array $b): int {
+        $timeA = isset($a['lastSeen']) ? strtotime((string) $a['lastSeen']) : 0;
+        $timeB = isset($b['lastSeen']) ? strtotime((string) $b['lastSeen']) : 0;
+        return $timeB <=> $timeA;
+    });
+
+    return [
+        'generatedAt' => gmdate('c'),
+        'servers' => $result,
+    ];
+}
+
+function merge_player_lists(array $existing, array $incoming): array
+{
+    $merged = [];
+    foreach ($existing as $player) {
+        if (is_string($player)) {
+            $merged[] = $player;
+        }
+    }
+    foreach ($incoming as $player) {
+        if (is_string($player)) {
+            $merged[] = $player;
+        }
+    }
+    return normalize_player_list($merged);
+}
+
+function normalize_player_list(array $players): array
+{
+    $normalized = [];
+    $seen = [];
+    foreach ($players as $player) {
+        if (!is_string($player)) {
+            continue;
+        }
+        $trimmed = trim($player);
+        if ($trimmed === '') {
+            continue;
+        }
+        $lower = strtolower($trimmed);
+        if (isset($seen[$lower])) {
+            continue;
+        }
+        $seen[$lower] = true;
+        $normalized[] = $trimmed;
+        if (count($normalized) >= 40) {
+            break;
+        }
+    }
+    sort($normalized, SORT_NATURAL | SORT_FLAG_CASE);
+    return $normalized;
+}
+
+function extract_server_info_from_match(array $match): ?array
+{
+    $matchId = find_string_in_match($match, [
+        'matchId',
+        'meta.matchId',
+        'match.matchId',
+        'match.id',
+        'id',
+    ]);
+
+    $receivedAtRaw = find_string_in_match($match, [
+        'receivedAt',
+        'received_at',
+        'meta.receivedAt',
+        'meta.received_at',
+        'match.receivedAt',
+        'match.received_at',
+        'timestamp',
+        'match.timestamp',
+        'match.matchTimestamp',
+        'serverStartTime',
+        'server.startTime',
+        'server.time',
+        'time',
+        'createdAt',
+        'meta.timestamp',
+        'stats.generatedAt',
+    ]);
+
+    $receivedAt = parse_datetime_candidate($receivedAtRaw);
+    if ($receivedAt === null) {
+        $receivedAt = parse_datetime_candidate($match['receivedAt'] ?? null);
+    }
+    if ($receivedAt === null && $matchId !== null) {
+        $receivedAt = parse_datetime_from_identifier($matchId);
+    }
+
+    $name = find_string_in_match($match, [
+        'server.name',
+        'server.hostname',
+        'server.serverName',
+        'server.servername',
+        'server.info.hostname',
+        'serverInfo.hostname',
+        'serverConfig.hostname',
+        'meta.server',
+        'meta.serverName',
+        'match.server',
+        'info.hostname',
+    ], ['hostname', 'server']);
+
+    $address = find_string_in_match($match, [
+        'server.address',
+        'server.endpoint',
+        'server.url',
+        'server.connection',
+        'meta.serverAddress',
+    ], ['address', 'endpoint']);
+
+    $ip = find_string_in_match($match, [
+        'server.ip',
+        'server.ipAddress',
+        'server.ip_address',
+        'server.ipaddress',
+        'server.host',
+        'match.serverIp',
+        'meta.serverIp',
+        'info.ip',
+        'info.address',
+    ], ['ip']);
+
+    $portValue = find_numeric_in_match($match, [
+        'server.port',
+        'server.gamePort',
+        'server.hostPort',
+        'server.hostport',
+        'meta.serverPort',
+        'match.serverPort',
+        'port',
+        'info.port',
+    ], ['port']);
+    $port = $portValue !== null ? max(0, min(65535, (int) $portValue)) : null;
+
+    $mode = find_string_in_match($match, [
+        'mode',
+        'gameMode',
+        'server.mode',
+        'server.gameMode',
+        'server.gametype',
+        'match.mode',
+        'match.gameType',
+        'meta.mode',
+        'info.g_gametype',
+    ], ['mode', 'gametype']);
+
+    $map = find_string_in_match($match, [
+        'map',
+        'server.map',
+        'server.mapName',
+        'match.map',
+        'match.mapName',
+        'level.map',
+        'level.mapName',
+        'info.mapname',
+        'meta.map',
+        'meta.mapName',
+    ], ['map', 'track', 'arena']);
+
+    $country = find_string_in_match($match, [
+        'server.country',
+        'server.location.country',
+        'meta.country',
+        'info.country',
+    ], ['country', 'region']);
+
+    $playerCountValue = find_numeric_in_match($match, [
+        'server.players.current',
+        'server.playersCount',
+        'server.playerCount',
+        'server.clients',
+        'server.numPlayers',
+        'match.playerCount',
+        'match.clients',
+        'stats.players',
+        'totals.players',
+        'summary.players',
+        'info.clients',
+        'info.players',
+        'meta.playerCount',
+        'players.count',
+    ], ['players', 'clients']);
+
+    $maxPlayersValue = find_numeric_in_match($match, [
+        'server.maxPlayers',
+        'server.maxclients',
+        'server.clients.max',
+        'server.maxClients',
+        'match.maxPlayers',
+        'match.maxclients',
+        'info.maxClients',
+        'info.maxclients',
+        'meta.maxPlayers',
+    ], ['maxclients', 'maxplayers', 'slots']);
+
+    $playerCount = $playerCountValue !== null ? max(0, min(128, (int) $playerCountValue)) : null;
+    $maxPlayers = $maxPlayersValue !== null ? max(0, min(128, (int) $maxPlayersValue)) : null;
+
+    $players = collect_player_names($match);
+
+    $addressString = $address;
+    if ($ip !== null && $port !== null) {
+        $addressString = $ip . ':' . $port;
+    } elseif ($addressString === null && $ip !== null) {
+        $addressString = $ip;
+    }
+
+    $key = null;
+    if ($ip !== null && $port !== null) {
+        $key = strtolower($ip) . ':' . $port;
+    } elseif ($addressString !== null) {
+        $key = strtolower($addressString);
+    } elseif ($name !== null) {
+        $key = strtolower($name);
+    } else {
+        return null;
+    }
+
+    return [
+        'key' => $key,
+        'name' => $name,
+        'address' => $addressString,
+        'ip' => $ip,
+        'port' => $port,
+        'mode' => $mode,
+        'map' => $map,
+        'country' => $country,
+        'players' => $players,
+        'playerCount' => $playerCount,
+        'maxPlayers' => $maxPlayers,
+        'lastSeenTs' => $receivedAt,
+        'lastSeenRaw' => $receivedAtRaw,
+        'matchId' => $matchId,
+    ];
+}
+
+function find_string_in_match(array $data, array $paths, array $keywords = []): ?string
+{
+    foreach ($paths as $path) {
+        $value = value_at_path($data, $path);
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed !== '') {
+                return $trimmed;
+            }
+        }
+    }
+
+    if ($keywords !== []) {
+        $found = search_string_by_keywords($data, $keywords);
+        if ($found !== null) {
+            return $found;
+        }
+    }
+
+    return null;
+}
+
+function find_numeric_in_match(array $data, array $paths, array $keywords = []): ?int
+{
+    foreach ($paths as $path) {
+        $value = value_at_path($data, $path);
+        $numeric = parse_numeric_value($value);
+        if ($numeric !== null) {
+            return $numeric;
+        }
+    }
+
+    if ($keywords !== []) {
+        $found = search_numeric_by_keywords($data, $keywords);
+        if ($found !== null) {
+            return $found;
+        }
+    }
+
+    return null;
+}
+
+function value_at_path(array $data, string $path)
+{
+    $segments = explode('.', $path);
+    $current = $data;
+    foreach ($segments as $segment) {
+        if (!is_array($current)) {
+            return null;
+        }
+        if (array_key_exists($segment, $current)) {
+            $current = $current[$segment];
+            continue;
+        }
+        $found = false;
+        foreach ($current as $key => $value) {
+            if (is_string($key) && strcasecmp($key, $segment) === 0) {
+                $current = $value;
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) {
+            return null;
+        }
+    }
+    return $current;
+}
+
+function search_string_by_keywords($node, array $keywords, int $depth = 0): ?string
+{
+    if ($depth > 6 || !is_array($node)) {
+        return null;
+    }
+    foreach ($node as $key => $value) {
+        if (is_string($key)) {
+            $lower = strtolower($key);
+            foreach ($keywords as $keyword) {
+                if (strpos($lower, $keyword) !== false) {
+                    if (is_string($value)) {
+                        $trimmed = trim($value);
+                        if ($trimmed !== '') {
+                            return $trimmed;
+                        }
+                    }
+                }
+            }
+        }
+        if (is_array($value)) {
+            $found = search_string_by_keywords($value, $keywords, $depth + 1);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+    }
+    return null;
+}
+
+function search_numeric_by_keywords($node, array $keywords, int $depth = 0): ?int
+{
+    if ($depth > 6 || !is_array($node)) {
+        return null;
+    }
+    foreach ($node as $key => $value) {
+        if (is_string($key)) {
+            $lower = strtolower($key);
+            foreach ($keywords as $keyword) {
+                if (strpos($lower, $keyword) !== false) {
+                    $numeric = parse_numeric_value($value);
+                    if ($numeric !== null) {
+                        return $numeric;
+                    }
+                }
+            }
+        }
+        if (is_array($value)) {
+            $found = search_numeric_by_keywords($value, $keywords, $depth + 1);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+    }
+    return null;
+}
+
+function parse_numeric_value($value): ?int
+{
+    if (is_int($value)) {
+        return $value;
+    }
+    if (is_float($value)) {
+        if (!is_finite($value)) {
+            return null;
+        }
+        return (int) round($value);
+    }
+    if (is_string($value)) {
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            return null;
+        }
+        if (!preg_match('/^-?\d+$/', $trimmed)) {
+            return null;
+        }
+        return (int) $trimmed;
+    }
+    return null;
+}
+
+function parse_datetime_candidate($value): ?int
+{
+    if ($value instanceof DateTimeInterface) {
+        return $value->getTimestamp();
+    }
+    if (is_int($value)) {
+        return $value > 0 ? $value : null;
+    }
+    if (is_float($value)) {
+        if (!is_finite($value)) {
+            return null;
+        }
+        return (int) round($value > 1_000_000_000_000 ? $value / 1000 : $value);
+    }
+    if (is_string($value)) {
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            return null;
+        }
+        if (preg_match('/^-?\d+$/', $trimmed)) {
+            $numeric = (int) $trimmed;
+            if ($numeric > 1_000_000_000_000) {
+                $numeric = (int) round($numeric / 1000);
+            }
+            return $numeric > 0 ? $numeric : null;
+        }
+        $time = strtotime($trimmed);
+        return $time === false ? null : $time;
+    }
+    return null;
+}
+
+function parse_datetime_from_identifier(?string $identifier): ?int
+{
+    if ($identifier === null) {
+        return null;
+    }
+    if (preg_match('/(\d{4})(\d{2})(\d{2})[-_](\d{2})(\d{2})(\d{2})/', $identifier, $matches) === 1) {
+        return gmmktime((int) $matches[4], (int) $matches[5], (int) $matches[6], (int) $matches[2], (int) $matches[3], (int) $matches[1]);
+    }
+    if (preg_match('/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/', $identifier, $matches) === 1) {
+        return gmmktime((int) $matches[4], (int) $matches[5], (int) $matches[6], (int) $matches[2], (int) $matches[3], (int) $matches[1]);
+    }
+    return null;
+}
+
+function collect_player_names(array $match): array
+{
+    $names = [];
+    $queue = [$match];
+    $keywords = ['player', 'driver', 'racer', 'pilot', 'nickname', 'nick'];
+
+    while ($queue !== []) {
+        $current = array_shift($queue);
+        if (!is_array($current)) {
+            continue;
+        }
+
+        $keys = [];
+        foreach ($current as $key => $value) {
+            if (is_array($value)) {
+                $queue[] = $value;
+            }
+            if (is_string($key)) {
+                $keys[] = strtolower($key);
+            }
+        }
+
+        $hasPlayerContext = false;
+        foreach ($keys as $key) {
+            if ($key === 'players' || $key === 'scoreboard' || $key === 'results' || $key === 'participants' || $key === 'entries' || $key === 'racers' || $key === 'drivers') {
+                $hasPlayerContext = true;
+                break;
+            }
+            foreach ($keywords as $keyword) {
+                if (strpos($key, $keyword) !== false) {
+                    $hasPlayerContext = true;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$hasPlayerContext) {
+            continue;
+        }
+
+        foreach ($current as $key => $value) {
+            if (!is_string($key) || !is_string($value)) {
+                continue;
+            }
+            $lowerKey = strtolower($key);
+            if ($lowerKey === 'name') {
+                $trimmed = trim($value);
+            } else {
+                $matchesKeyword = false;
+                foreach ($keywords as $keyword) {
+                    if (strpos($lowerKey, $keyword) !== false) {
+                        $matchesKeyword = true;
+                        break;
+                    }
+                }
+                if (!$matchesKeyword) {
+                    continue;
+                }
+                $trimmed = trim($value);
+            }
+            if ($trimmed === '' || strlen($trimmed) > 64) {
+                continue;
+            }
+            $names[] = $trimmed;
+        }
+
+        if (count($names) >= 40) {
+            break;
+        }
+    }
+
+    return normalize_player_list($names);
 }
 
 function load_arena_metadata(): array
