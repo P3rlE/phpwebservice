@@ -15,6 +15,7 @@ Dieses Verzeichnis enthält einen minimalen Ladder-Endpunkt, der sich auf typisc
 * **GET `/matches`** – Liefert eine Liste aller gespeicherten Matches (neueste zuerst). Optional können `mode`, `limit` und `offset` als Query-Parameter gesetzt werden.
 * **GET `/matches/{matchId}`** – Gibt das vollständige JSON zu einer Match-ID zurück.
 * **DELETE `/matches/{matchId}`** – Löscht ein Match dauerhaft.
+* **GET `/servers`** – Aggregiert alle bekannten Server anhand der gespeicherten Matches und liefert Name, Adresse, zuletzt gesehene Spieler sowie den Zeitpunkt des letzten Matches.
 
 ### Beispiel-Aufrufe
 ```bash
@@ -38,7 +39,7 @@ Jedes Match wird als einzelne JSON-Datei unter `data/<matchId>.json` abgelegt. S
 
 ## Web-Frontend
 
-Die Startseite von `index.php` liefert jetzt ein modernes Dashboard, das die gespeicherten Matches aus dem `data/`-Ordner direkt im Browser aufbereitet. Highlights:
+Die Startseite von `index.php` liefert jetzt ein modernes Dashboard, das die gespeicherten Matches aus dem `data/`-Ordner direkt im Browser aufbereitet. Zusätzlich steht unter `/servers` eine zweite Oberfläche mit einem komfortablen Serverbrowser bereit. Highlights:
 
 * **Bestzeiten-Ranking** – Ein eigener Tab wertet Renn-Modi aus, erkennt Bestzeiten pro Spieler/Map und sortiert sie automatisch.
 * **Filter nach Spielmodus** – Die verfügbaren Modi werden automatisch aus den vorhandenen JSON-Dateien ermittelt.
@@ -46,6 +47,7 @@ Die Startseite von `index.php` liefert jetzt ein modernes Dashboard, das die ges
 * **Modus-Verteilung & Kennzahlen** – Karten zeigen Gesamtanzahl, letzte Aktualisierung sowie erkannte Spieler.
 * **Detailansicht pro Match** – Ein Klick öffnet Metadaten und das vollständige JSON, damit sich Fehler schnell nachvollziehen lassen.
 * **Konfigurierbares Lade-Limit** – Über die UI lässt sich bestimmen, wie viele Matches das Frontend auf einmal lädt.
+* **Serverbrowser mit Filter & Auto-Refresh** – Fasst Server aus den vorhandenen Matchdaten zusammen, zeigt Spielerlisten sowie das zuletzt erfasste Match und aktualisiert sich auf Wunsch automatisch.
 
 Das Frontend greift ausschließlich auf die bestehenden API-Endpunkte zu. Die JSON-Schnittstelle bleibt vollständig kompatibel.
 
