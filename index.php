@@ -1267,12 +1267,20 @@ try {
           'wins',
           'roundsWon',
           'roundWins',
+          'round_wins',
+          'rounds_won',
           'rounds',
           'victories',
           'stats.wins',
           'stats.roundsWon',
+          'stats.round_wins',
+          'stats.rounds_won',
           'result.wins',
+          'result.round_wins',
+          'result.rounds_won',
           'summary.wins',
+          'summary.round_wins',
+          'summary.rounds_won',
           'totals.wins'
         ],
         keywords: ['win', 'round', 'elimination']
@@ -1424,6 +1432,67 @@ const SCOREBOARD_PATHS = [
   'timing.leaderboard',
   'timings',
   'players'
+];
+
+const ELIMINATION_POSITION_PATHS = [
+  'position',
+  'place',
+  'rank',
+  'standing',
+  'finishPosition',
+  'finishRank',
+  'finish.position',
+  'finish.place',
+  'finish.rank',
+  'finalPosition',
+  'finalRank',
+  'stats.position',
+  'stats.place',
+  'stats.rank',
+  'result.position',
+  'result.place',
+  'result.rank',
+  'summary.position',
+  'summary.place',
+  'totals.position',
+  'totals.place'
+];
+
+const ELIMINATION_REMAINING_PATHS = [
+  'remainingPlayers',
+  'playersRemaining',
+  'playersLeft',
+  'playersAlive',
+  'alivePlayers',
+  'stillAlive',
+  'stats.remainingPlayers',
+  'stats.playersRemaining',
+  'result.remainingPlayers',
+  'result.playersRemaining',
+  'summary.remainingPlayers',
+  'summary.playersRemaining',
+  'totals.remainingPlayers',
+  'totals.playersRemaining'
+];
+
+const ELIMINATION_ROSTER_PATHS = [
+  'rosterSize',
+  'roster',
+  'playerCount',
+  'totalPlayers',
+  'participants',
+  'stats.rosterSize',
+  'stats.playerCount',
+  'stats.totalPlayers',
+  'result.rosterSize',
+  'result.playerCount',
+  'result.totalPlayers',
+  'summary.rosterSize',
+  'summary.playerCount',
+  'summary.totalPlayers',
+  'totals.rosterSize',
+  'totals.playerCount',
+  'totals.totalPlayers'
 ];
 
 const MAX_REASONABLE_TIME = 6 * 3600;
@@ -2489,12 +2558,23 @@ function buildObjectiveLeaderboard() {
     const priority = OBJECTIVE_MODE_PRIORITY[modeKey] || OBJECTIVE_DEFAULT_PRIORITY;
     const isElimination = modeKey === 'gt_elimination';
     const targetMap = isElimination ? eliminationBestByKey : bestByKey;
-    for (const entry of entries) {
+    const eliminationContext = isElimination ? prepareEliminationMetricContext(entries) : null;
+    for (let entryIndex = 0; entryIndex < entries.length; entryIndex += 1) {
+      const entry = entries[entryIndex];
       const player = extractLeaderboardPlayer(entry);
       if (!player) {
         continue;
       }
-      const metric = extractObjectiveMetric(entry, modeKey);
+      const eliminationInfo =
+        isElimination && eliminationContext ? eliminationContext.positions.get(entryIndex) : null;
+      const metricContext = isElimination
+        ? {
+            rosterSize: eliminationContext ? eliminationContext.rosterSize : null,
+            position: eliminationInfo ? eliminationInfo.explicitPosition : null,
+            ordinalPosition: eliminationInfo ? eliminationInfo.ordinalPosition : null
+          }
+        : undefined;
+      const metric = extractObjectiveMetric(entry, modeKey, metricContext);
       if (metric.value === null) {
         continue;
       }
@@ -2565,6 +2645,27 @@ function buildObjectiveLeaderboard() {
   }
   state.objectiveLeaderboard = sortObjectiveEntries(bestByKey);
   state.eliminationLeaderboard = sortObjectiveEntries(eliminationBestByKey);
+}
+
+function prepareEliminationMetricContext(entries) {
+  const positions = new Map();
+  let ordinal = 0;
+  if (!Array.isArray(entries)) {
+    return { rosterSize: 0, positions };
+  }
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index];
+    const player = extractLeaderboardPlayer(entry);
+    if (!player) {
+      continue;
+    }
+    ordinal += 1;
+    positions.set(index, {
+      ordinalPosition: ordinal,
+      explicitPosition: extractEliminationPosition(entry)
+    });
+  }
+  return { rosterSize: ordinal, positions };
 }
 
 function updateSummary() {
@@ -2974,8 +3075,44 @@ function priorityIndex(type, priority) {
   return index === -1 ? priority.length : index;
 }
 
-function extractObjectiveMetric(entry, modeKey) {
+function extractObjectiveMetric(entry, modeKey, context = null) {
   if (!entry || typeof entry !== 'object') {
+    return { value: null, type: null };
+  }
+  if (modeKey === 'gt_elimination') {
+    const winsDefinition = OBJECTIVE_METRIC_DEFINITIONS.wins;
+    let value = null;
+    if (winsDefinition && winsDefinition.paths) {
+      value = numericAtPaths(entry, winsDefinition.paths);
+    }
+    if (value === null) {
+      value = searchNumericByKeywords(entry, ['win', 'won', 'victor']);
+    }
+    if (value === null) {
+      value = deriveEliminationWins(entry, context);
+    }
+    if (value !== null) {
+      return { value: Math.max(0, value), type: 'wins' };
+    }
+    const fallbackPriority = (OBJECTIVE_MODE_PRIORITY[modeKey] || OBJECTIVE_DEFAULT_PRIORITY).filter(
+      (type) => type !== 'wins'
+    );
+    for (const type of fallbackPriority) {
+      const definition = OBJECTIVE_METRIC_DEFINITIONS[type];
+      if (!definition) {
+        continue;
+      }
+      let fallbackValue = null;
+      if (definition.paths) {
+        fallbackValue = numericAtPaths(entry, definition.paths);
+      }
+      if (fallbackValue === null && definition.keywords) {
+        fallbackValue = searchNumericByKeywords(entry, definition.keywords);
+      }
+      if (fallbackValue !== null) {
+        return { value: Math.max(0, fallbackValue), type };
+      }
+    }
     return { value: null, type: null };
   }
   const priority = OBJECTIVE_MODE_PRIORITY[modeKey] || OBJECTIVE_DEFAULT_PRIORITY;
@@ -2996,6 +3133,38 @@ function extractObjectiveMetric(entry, modeKey) {
     }
   }
   return { value: null, type: null };
+}
+
+function deriveEliminationWins(entry, context = null) {
+  const rosterFromContext = normalizePositiveInteger(context && context.rosterSize);
+  const contextPosition = normalizePositiveInteger(context && context.position);
+  const ordinalPosition = normalizePositiveInteger(context && context.ordinalPosition);
+  const entryPosition = contextPosition ?? extractEliminationPosition(entry);
+  const basePosition = entryPosition ?? ordinalPosition ?? null;
+  const rosterFromEntry = normalizePositiveInteger(numericAtPaths(entry, ELIMINATION_ROSTER_PATHS));
+  const effectiveRoster = rosterFromContext ?? rosterFromEntry ?? null;
+  if (effectiveRoster && basePosition) {
+    return Math.max(0, effectiveRoster - basePosition + 1);
+  }
+  const remainingPlayers = normalizePositiveInteger(numericAtPaths(entry, ELIMINATION_REMAINING_PATHS));
+  if (effectiveRoster && remainingPlayers) {
+    return Math.max(0, effectiveRoster - remainingPlayers + 1);
+  }
+  if (remainingPlayers !== null) {
+    return Math.max(0, 1000 - remainingPlayers);
+  }
+  if (basePosition !== null) {
+    return Math.max(0, 1000 - basePosition);
+  }
+  return null;
+}
+
+function extractEliminationPosition(entry) {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+  const position = numericAtPaths(entry, ELIMINATION_POSITION_PATHS);
+  return normalizePositiveInteger(position);
 }
 
 function valueAtPath(obj, path) {
@@ -3057,6 +3226,21 @@ function parseNumericValue(value) {
     return Number.isFinite(numeric) ? numeric : null;
   }
   return null;
+}
+
+function normalizePositiveInteger(value) {
+  if (typeof value === 'string') {
+    const numeric = parseNumericValue(value);
+    if (numeric === null) {
+      return null;
+    }
+    value = numeric;
+  }
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+  const integer = Math.floor(value);
+  return integer > 0 ? integer : null;
 }
 
 function interpretBoolean(value) {
