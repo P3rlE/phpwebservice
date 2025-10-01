@@ -7,9 +7,23 @@ declare(strict_types=1);
 const DATA_DIR = __DIR__ . '/data';
 const ARENA_DIR = __DIR__ . '/arena';
 const DEFAULT_MASTER_HOST = 'master.ioquake3.org';
+
+const SECONDARY_MASTER_HOST = 'dpmaster.deathmask.net';
 const DEFAULT_MASTER_PORT = 27950;
 const DEFAULT_MASTER_TIMEOUT = 2;
 const DEFAULT_MASTER_LIMIT = 64;
+const DEFAULT_MASTER_GAME = 'q3rally';
+const DEFAULT_MASTER_SERVERS = [
+    [
+        'host' => DEFAULT_MASTER_HOST,
+        'port' => DEFAULT_MASTER_PORT,
+    ],
+    [
+        'host' => SECONDARY_MASTER_HOST,
+        'port' => DEFAULT_MASTER_PORT,
+    ],
+];
+
 const MASTER_GAMETYPE_LABELS = [
     'gametype_0' => 'Free For All',
     'gametype_1' => 'Tournament',
@@ -77,7 +91,7 @@ try {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Q3Rally Serverbrowser</title>
-  <meta name="description" content="Live-Übersicht der zuletzt aufgezeichneten Q3Rally-Server.">
+  <meta name="description" content="Live-Übersicht der erreichbaren Q3Rally-Server von master.ioquake3.org und dpmaster.deathmask.net.">
   <style>
     :root {
       color-scheme: dark;
@@ -479,7 +493,7 @@ try {
           <img src="<?= htmlspecialchars($assetPrefix . '/logo.png', ENT_QUOTES); ?>" alt="Q3Rally Logo" onerror="this.style.display='none'">
           <div class="hero-info">
             <h1 data-i18n-html="servers.hero.title">Q3Rally Serverbrowser <span class="badge-beta">beta</span></h1>
-            <p data-i18n="servers.hero.description">Zeigt die zuletzt erfassten Server aus den Ladder-Daten inklusive Spieler und Modi.</p>
+            <p data-i18n="servers.hero.description">Fragt master.ioquake3.org und dpmaster.deathmask.net nach Q3Rally-Servern ab und zeigt erreichbare Spielserver samt Spielern, Map und Modus.</p>
           </div>
         </div>
         <div class="hero-actions">
@@ -600,10 +614,12 @@ try {
 
     const I18N = {
       de: {
-        'meta.title': 'ioquake3 Masterserver Browser',
-        'meta.description': 'Live-Übersicht aller vom ioquake3 Masterserver gemeldeten Server.',
-        'servers.hero.title': 'ioquake3 Masterserver Browser <span class="badge-beta">beta</span>',
-        'servers.hero.description': 'Fragt den offiziellen ioquake3 Masterserver ab und zeigt erreichbare Spielserver samt Spielern, Map und Modus.',
+
+        'meta.title': 'Q3Rally Serverbrowser',
+        'meta.description': 'Live-Übersicht der erreichbaren Q3Rally-Server von master.ioquake3.org und dpmaster.deathmask.net.',
+        'servers.hero.title': 'Q3Rally Serverbrowser <span class="badge-beta">beta</span>',
+        'servers.hero.description': 'Fragt master.ioquake3.org und dpmaster.deathmask.net nach Q3Rally-Servern ab und zeigt erreichbare Spielserver samt Spielern, Map und Modus.',
+
         'language.toggleLabel': 'Sprachauswahl',
         'language.deLabel': 'Deutsch',
         'language.enLabel': 'Englisch',
@@ -620,9 +636,11 @@ try {
         'servers.filters.mode.all': 'Alle Modi',
         'servers.actions.refreshLabel': 'Aktualisieren',
         'servers.actions.refresh': 'Neu laden',
-        'servers.status.loading': 'Lade Serverliste vom Masterserver…',
-        'servers.status.error': 'Masterserver konnte nicht abgefragt werden.',
-        'servers.empty': 'Keine Server antworten. Passe die Filter an oder versuche es erneut.',
+
+        'servers.status.loading': 'Lade Q3Rally-Serverliste…',
+        'servers.status.error': 'Masterserver konnten nicht abgefragt werden.',
+        'servers.empty': 'Keine Q3Rally-Server gefunden. Passe die Filter an oder versuche es erneut.',
+
         'servers.table.server': 'Server',
         'servers.table.mode': 'Modus',
         'servers.table.players': 'Spieler',
@@ -636,10 +654,12 @@ try {
         'servers.table.mod': 'Mod: {mod}'
       },
       en: {
-        'meta.title': 'ioquake3 Master Server Browser',
-        'meta.description': 'Live overview of servers reported by the ioquake3 master server.',
-        'servers.hero.title': 'ioquake3 Master Server Browser <span class="badge-beta">beta</span>',
-        'servers.hero.description': 'Queries the official ioquake3 master server and lists reachable game servers including players, map and mode.',
+
+        'meta.title': 'Q3Rally Server Browser',
+        'meta.description': 'Live overview of reachable Q3Rally servers from master.ioquake3.org and dpmaster.deathmask.net.',
+        'servers.hero.title': 'Q3Rally Server Browser <span class="badge-beta">beta</span>',
+        'servers.hero.description': 'Queries master.ioquake3.org and dpmaster.deathmask.net for Q3Rally servers and lists reachable game servers including players, map and mode.',
+
         'language.toggleLabel': 'Language selection',
         'language.deLabel': 'German',
         'language.enLabel': 'English',
@@ -656,9 +676,11 @@ try {
         'servers.filters.mode.all': 'All modes',
         'servers.actions.refreshLabel': 'Refresh',
         'servers.actions.refresh': 'Reload',
-        'servers.status.loading': 'Loading master server listing…',
-        'servers.status.error': 'Failed to query the master server.',
-        'servers.empty': 'No servers responded. Adjust the filters or try again.',
+
+        'servers.status.loading': 'Loading the Q3Rally server list…',
+        'servers.status.error': 'Failed to query the master servers.',
+        'servers.empty': 'No Q3Rally servers responded. Adjust the filters or try again.',
+
         'servers.table.server': 'Server',
         'servers.table.mode': 'Mode',
         'servers.table.players': 'Players',
@@ -4881,6 +4903,7 @@ function build_server_overview(): array
         $candidate = trim($hostParam);
         if ($candidate !== '' && preg_match('/^[A-Za-z0-9._-]+$/', $candidate)) {
             $host = $candidate;
+
         }
     }
 
@@ -4911,18 +4934,75 @@ function build_server_overview(): array
         }
     }
 
-    $addressLimit = min(max($limit * 3, $limit), 256);
-    $addresses = query_master_server_list($host, $port, $timeout, max($addressLimit, 1));
-    $servers = [];
+    $game = DEFAULT_MASTER_GAME;
+    $gameParam = $_GET['game'] ?? null;
+    if (is_string($gameParam)) {
+        $gameCandidate = trim($gameParam);
+        if ($gameCandidate !== '' && preg_match('/^[A-Za-z0-9._-]+$/', $gameCandidate)) {
+            $game = strtolower($gameCandidate);
+        }
+    }
 
-    foreach ($addresses as $entry) {
+    $addressLimit = min(max($limit * 3, $limit), 256);
+    $useOverride = $hostParam !== null || $portParam !== null;
+    $masters = $useOverride ? [[
+        'host' => $host,
+        'port' => $port,
+    ]] : DEFAULT_MASTER_SERVERS;
+
+    $addressMap = [];
+    $addressList = [];
+    $sources = [];
+
+    foreach ($masters as $master) {
+        $masterHost = $master['host'];
+        $masterPort = $master['port'];
+        $entries = query_master_server_list($masterHost, $masterPort, $timeout, max($addressLimit, 1), $game);
+        $sources[] = [
+            'host' => $masterHost,
+            'port' => $masterPort,
+            'listed' => count($entries),
+        ];
+
+        foreach ($entries as $entry) {
+            $key = $entry['address'];
+            if (!isset($addressMap[$key])) {
+                $addressMap[$key] = true;
+                $addressList[] = $entry;
+            }
+        }
+    }
+
+    $servers = [];
+    $gameFilter = $game !== '' ? strtolower($game) : null;
+
+    foreach ($addressList as $entry) {
         if (count($servers) >= $limit) {
             break;
         }
+
         $status = query_server_status($entry['ip'], $entry['port'], $timeout);
         if ($status === null) {
             continue;
         }
+
+        if ($gameFilter !== null) {
+            $infoGame = '';
+            $info = $status['info'];
+            if (isset($info['game']) && is_string($info['game'])) {
+                $infoGame = $info['game'];
+            } elseif (isset($info['fs_game']) && is_string($info['fs_game'])) {
+                $infoGame = $info['fs_game'];
+            } elseif ($status['mod'] !== null) {
+                $infoGame = $status['mod'];
+            }
+
+            if ($infoGame !== '' && stripos($infoGame, $gameFilter) === false) {
+                continue;
+            }
+        }
+
+
         $servers[] = [
             'name' => $status['hostname'],
             'rawName' => $status['hostnameRaw'],
@@ -4943,16 +5023,31 @@ function build_server_overview(): array
         ];
     }
 
-    $totalListed = count($addresses);
+
+    $totalListed = count($addressList);
     $reachable = count($servers);
     $unreachable = max(0, $totalListed - $reachable);
 
+    $primaryMaster = $masters[0] ?? ['host' => $host, 'port' => $port];
+
     return [
         'master' => [
-            'host' => $host,
-            'port' => $port,
+            'host' => $primaryMaster['host'] ?? $host,
+            'port' => $primaryMaster['port'] ?? $port,
             'timeout' => $timeout,
         ],
+        'masters' => array_map(static function ($source) use ($timeout) {
+            return [
+                'host' => $source['host'],
+                'port' => $source['port'],
+                'timeout' => $timeout,
+                'listed' => $source['listed'],
+            ];
+        }, $sources),
+        'filters' => [
+            'game' => $game,
+        ],
+
         'summary' => [
             'totalListed' => $totalListed,
             'reachable' => $reachable,
@@ -4964,19 +5059,27 @@ function build_server_overview(): array
     ];
 }
 
-function query_master_server_list(string $host, int $port, int $timeout, int $limit): array
+
+function query_master_server_list(string $host, int $port, int $timeout, int $limit, ?string $game = null): array
+
 {
     $limit = max(1, min($limit, 512));
     $socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
     if ($socket === false) {
         return [];
+
     }
 
     @socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, ['sec' => $timeout, 'usec' => 0]);
     @socket_set_option($socket, SOL_SOCKET, SO_SNDTIMEO, ['sec' => $timeout, 'usec' => 0]);
 
-    $message = "\xFF\xFF\xFF\xFFgetservers 68 empty full\x00";
+    $message = "\xFF\xFF\xFF\xFFgetservers 68 empty full";
+    if (is_string($game) && $game !== '') {
+        $message .= '\\game\\' . $game;
+    }
+    $message .= "\x00";
     @socket_sendto($socket, $message, strlen($message), 0, $host, $port);
+
 
     $servers = [];
     $seen = [];
@@ -5210,6 +5313,7 @@ function parse_status_response(string $payload): ?array
     $body = substr($payload, strlen($prefix));
     if ($body === false) {
         return null;
+
     }
 
     $lines = preg_split('/\r?\n/', $body);
@@ -5221,6 +5325,7 @@ function parse_status_response(string $payload): ?array
     if ($infoLine === null) {
         return null;
     }
+
 
     $info = [];
     $tokens = explode('\\', $infoLine);
