@@ -6,6 +6,37 @@ declare(strict_types=1);
 
 const DATA_DIR = __DIR__ . '/data';
 const ARENA_DIR = __DIR__ . '/arena';
+const DEFAULT_MASTER_HOST = 'master.ioquake3.org';
+const DEFAULT_MASTER_PORT = 27950;
+const DEFAULT_MASTER_TIMEOUT = 2;
+const DEFAULT_MASTER_LIMIT = 64;
+const MASTER_GAMETYPE_LABELS = [
+    'gametype_0' => 'Free For All',
+    'gametype_1' => 'Tournament',
+    'gametype_2' => 'Single Player',
+    'gametype_3' => 'Team Deathmatch',
+    'gametype_4' => 'Capture The Flag',
+    'gametype_5' => 'One Flag CTF',
+    'gametype_6' => 'Overload',
+    'gametype_7' => 'Harvester',
+    'gametype_8' => 'Domination',
+    'gametype_9' => 'Double Domination',
+    'gametype_10' => 'Elimination',
+    'gametype_11' => 'CTF Elimination',
+    'gametype_12' => 'Last Man Standing',
+    'gt_racing' => 'Racing',
+    'gt_racing_dm' => 'Racing Deathmatch',
+    'gt_derby' => 'Demolition Derby',
+    'gt_lcs' => 'Last Car Standing',
+    'gt_elimination' => 'Elimination',
+    'gt_deathmatch' => 'Deathmatch',
+    'gt_team' => 'Team Deathmatch',
+    'gt_team_racing' => 'Team Racing',
+    'gt_team_racing_dm' => 'Team Racing Deathmatch',
+    'gt_ctf' => 'Capture the Flag',
+    'gt_ctf4' => '4-Team CTF',
+    'gt_domination' => 'Domination',
+];
 
 if (!is_dir(DATA_DIR)) {
     if (!mkdir(DATA_DIR, 0775, true) && !is_dir(DATA_DIR)) {
@@ -467,7 +498,7 @@ try {
         <div class="stat"><dt data-i18n="servers.stats.total">Server</dt><dd id="stat-servers">–</dd></div>
         <div class="stat"><dt data-i18n="servers.stats.lastUpdate">Letztes Update</dt><dd id="stat-last">–</dd></div>
         <div class="stat"><dt data-i18n="servers.stats.modes">Modi</dt><dd id="stat-modes">–</dd></div>
-        <div class="stat"><dt data-i18n="servers.stats.players">Spieler zuletzt</dt><dd id="stat-players">–</dd></div>
+        <div class="stat"><dt data-i18n="servers.stats.players">Spieler online</dt><dd id="stat-players">–</dd></div>
       </dl>
     </section>
 
@@ -498,7 +529,7 @@ try {
               <th scope="col" data-i18n="servers.table.server">Server</th>
               <th scope="col" data-i18n="servers.table.mode">Modus</th>
               <th scope="col" data-i18n="servers.table.players">Spieler</th>
-              <th scope="col" data-i18n="servers.table.lastSeen">Zuletzt gesehen</th>
+              <th scope="col" data-i18n="servers.table.ping">Ping</th>
             </tr>
           </thead>
           <tbody id="serverTableBody"></tbody>
@@ -512,6 +543,19 @@ try {
     const API_BASE = <?= json_encode($apiBase, JSON_UNESCAPED_SLASHES); ?>;
     const MODE_TRANSLATIONS = {
       de: {
+        gametype_0: 'Jeder gegen Jeden',
+        gametype_1: 'Turnier',
+        gametype_2: 'Einzelspieler',
+        gametype_3: 'Team-Deathmatch',
+        gametype_4: 'Capture the Flag',
+        gametype_5: 'One Flag CTF',
+        gametype_6: 'Overload',
+        gametype_7: 'Harvester',
+        gametype_8: 'Domination',
+        gametype_9: 'Double Domination',
+        gametype_10: 'Elimination',
+        gametype_11: 'CTF Elimination',
+        gametype_12: 'Last Man Standing',
         gt_racing: 'Rennen',
         gt_racing_dm: 'Deathmatch Rennen',
         gt_derby: 'Demolition Derby',
@@ -526,6 +570,19 @@ try {
         gt_domination: 'Domination'
       },
       en: {
+        gametype_0: 'Free For All',
+        gametype_1: 'Tournament',
+        gametype_2: 'Single Player',
+        gametype_3: 'Team Deathmatch',
+        gametype_4: 'Capture the Flag',
+        gametype_5: 'One Flag CTF',
+        gametype_6: 'Overload',
+        gametype_7: 'Harvester',
+        gametype_8: 'Domination',
+        gametype_9: 'Double Domination',
+        gametype_10: 'Elimination',
+        gametype_11: 'CTF Elimination',
+        gametype_12: 'Last Man Standing',
         gt_racing: 'Racing',
         gt_racing_dm: 'Racing Deathmatch',
         gt_derby: 'Demolition Derby',
@@ -543,10 +600,10 @@ try {
 
     const I18N = {
       de: {
-        'meta.title': 'Q3Rally Serverbrowser',
-        'meta.description': 'Live-Übersicht der zuletzt aufgezeichneten Q3Rally-Server.',
-        'servers.hero.title': 'Q3Rally Serverbrowser <span class="badge-beta">beta</span>',
-        'servers.hero.description': 'Zeigt die zuletzt erfassten Server aus den Ladder-Daten inklusive Spieler und Modi.',
+        'meta.title': 'ioquake3 Masterserver Browser',
+        'meta.description': 'Live-Übersicht aller vom ioquake3 Masterserver gemeldeten Server.',
+        'servers.hero.title': 'ioquake3 Masterserver Browser <span class="badge-beta">beta</span>',
+        'servers.hero.description': 'Fragt den offiziellen ioquake3 Masterserver ab und zeigt erreichbare Spielserver samt Spielern, Map und Modus.',
         'language.toggleLabel': 'Sprachauswahl',
         'language.deLabel': 'Deutsch',
         'language.enLabel': 'Englisch',
@@ -556,33 +613,33 @@ try {
         'servers.stats.total': 'Server',
         'servers.stats.lastUpdate': 'Letztes Update',
         'servers.stats.modes': 'Modi',
-        'servers.stats.players': 'Spieler zuletzt',
+        'servers.stats.players': 'Spieler online',
         'servers.filters.search.label': 'Suche',
         'servers.filters.search.placeholder': 'Server, Map oder Spieler…',
         'servers.filters.mode.label': 'Spielmodus',
         'servers.filters.mode.all': 'Alle Modi',
         'servers.actions.refreshLabel': 'Aktualisieren',
         'servers.actions.refresh': 'Neu laden',
-        'servers.status.loading': 'Lade Serverliste…',
-        'servers.status.error': 'Serverliste konnte nicht geladen werden.',
-        'servers.empty': 'Keine Server gefunden. Passe die Filter an oder lade erneut.',
+        'servers.status.loading': 'Lade Serverliste vom Masterserver…',
+        'servers.status.error': 'Masterserver konnte nicht abgefragt werden.',
+        'servers.empty': 'Keine Server antworten. Passe die Filter an oder versuche es erneut.',
         'servers.table.server': 'Server',
         'servers.table.mode': 'Modus',
         'servers.table.players': 'Spieler',
-        'servers.table.lastSeen': 'Zuletzt gesehen',
+        'servers.table.ping': 'Ping',
         'servers.table.unknown': 'Unbekannter Server',
         'servers.table.noPlayers': 'Keine Spieler erfasst',
         'servers.table.playersShort': '{current}/{max} Spieler',
         'servers.table.playersOnly': '{current} Spieler',
         'servers.table.playerList': 'Spieler: {list}',
-        'servers.table.lastSeenAt': 'Zuletzt: {date}',
-        'servers.table.matchCount': '{count} Matches erfasst'
+        'servers.table.pingValue': '{ping} ms',
+        'servers.table.mod': 'Mod: {mod}'
       },
       en: {
-        'meta.title': 'Q3Rally Server Browser',
-        'meta.description': 'Live overview of recently recorded Q3Rally servers.',
-        'servers.hero.title': 'Q3Rally Server Browser <span class="badge-beta">beta</span>',
-        'servers.hero.description': 'Shows the latest servers captured from ladder data including players and modes.',
+        'meta.title': 'ioquake3 Master Server Browser',
+        'meta.description': 'Live overview of servers reported by the ioquake3 master server.',
+        'servers.hero.title': 'ioquake3 Master Server Browser <span class="badge-beta">beta</span>',
+        'servers.hero.description': 'Queries the official ioquake3 master server and lists reachable game servers including players, map and mode.',
         'language.toggleLabel': 'Language selection',
         'language.deLabel': 'German',
         'language.enLabel': 'English',
@@ -592,27 +649,27 @@ try {
         'servers.stats.total': 'Servers',
         'servers.stats.lastUpdate': 'Last update',
         'servers.stats.modes': 'Modes',
-        'servers.stats.players': 'Players seen',
+        'servers.stats.players': 'Players online',
         'servers.filters.search.label': 'Search',
         'servers.filters.search.placeholder': 'Server, map or player…',
         'servers.filters.mode.label': 'Game mode',
         'servers.filters.mode.all': 'All modes',
         'servers.actions.refreshLabel': 'Refresh',
         'servers.actions.refresh': 'Reload',
-        'servers.status.loading': 'Loading server list…',
-        'servers.status.error': 'Failed to load server list.',
-        'servers.empty': 'No servers found. Adjust the filters or try again.',
+        'servers.status.loading': 'Loading master server listing…',
+        'servers.status.error': 'Failed to query the master server.',
+        'servers.empty': 'No servers responded. Adjust the filters or try again.',
         'servers.table.server': 'Server',
         'servers.table.mode': 'Mode',
         'servers.table.players': 'Players',
-        'servers.table.lastSeen': 'Last seen',
+        'servers.table.ping': 'Ping',
         'servers.table.unknown': 'Unknown server',
         'servers.table.noPlayers': 'No players recorded',
         'servers.table.playersShort': '{current}/{max} players',
         'servers.table.playersOnly': '{current} players',
         'servers.table.playerList': 'Players: {list}',
-        'servers.table.lastSeenAt': 'Last seen: {date}',
-        'servers.table.matchCount': '{count} matches recorded'
+        'servers.table.pingValue': '{ping} ms',
+        'servers.table.mod': 'Mod: {mod}'
       }
     };
 
@@ -622,6 +679,7 @@ try {
       search: '',
       mode: 'all',
       lastUpdated: null,
+      summary: null,
       autoRefreshHandle: null
     };
 
@@ -746,31 +804,49 @@ try {
     function normalizeServer(raw) {
       const name = typeof raw.name === 'string' && raw.name.trim() !== '' ? raw.name.trim() : null;
       const address = typeof raw.address === 'string' && raw.address.trim() !== '' ? raw.address.trim() : null;
+      const ip = typeof raw.ip === 'string' && raw.ip.trim() !== '' ? raw.ip.trim() : null;
+      const port = Number.isFinite(raw.port) ? raw.port : null;
       const mode = typeof raw.mode === 'string' && raw.mode.trim() !== '' ? raw.mode.trim() : null;
+      const modeLabel = typeof raw.modeName === 'string' && raw.modeName.trim() !== '' ? raw.modeName.trim() : null;
       const map = typeof raw.map === 'string' && raw.map.trim() !== '' ? raw.map.trim() : null;
-      const lastSeen = typeof raw.lastSeen === 'string' && raw.lastSeen.trim() !== '' ? raw.lastSeen : null;
-      const playerCount = Number.isFinite(raw.playerCount) ? raw.playerCount : null;
+      const mod = typeof raw.mod === 'string' && raw.mod.trim() !== '' ? raw.mod.trim() : null;
+      const playerCount = Number.isFinite(raw.playerCount)
+        ? raw.playerCount
+        : Number.isFinite(raw.numPlayers)
+          ? raw.numPlayers
+          : null;
       const maxPlayers = Number.isFinite(raw.maxPlayers) ? raw.maxPlayers : null;
+      const ping = Number.isFinite(raw.ping) ? raw.ping : null;
+      const respondedAt = typeof raw.respondedAt === 'string' && raw.respondedAt.trim() !== '' ? raw.respondedAt : null;
       const players = Array.isArray(raw.players)
         ? raw.players
             .filter((entry) => typeof entry === 'string' && entry.trim() !== '')
             .map((entry) => entry.trim())
         : [];
-      const country = typeof raw.country === 'string' && raw.country.trim() !== '' ? raw.country.trim() : null;
-      const lastMatchId = typeof raw.lastMatchId === 'string' && raw.lastMatchId.trim() !== '' ? raw.lastMatchId.trim() : null;
-      const matchCount = Number.isFinite(raw.matchCount) ? raw.matchCount : null;
+      const playerDetails = Array.isArray(raw.playerDetails)
+        ? raw.playerDetails
+            .filter((entry) => entry && typeof entry === 'object')
+            .map((entry) => ({
+              name: typeof entry.name === 'string' && entry.name.trim() !== '' ? entry.name.trim() : null,
+              score: Number.isFinite(Number(entry.score)) ? Number(entry.score) : null,
+              ping: Number.isFinite(Number(entry.ping)) ? Number(entry.ping) : null
+            }))
+        : [];
       return {
         name,
         address,
+        ip,
+        port,
         mode,
+        modeLabel,
         map,
-        lastSeen,
+        mod,
         playerCount,
         maxPlayers,
         players,
-        country,
-        lastMatchId,
-        matchCount
+        playerDetails,
+        ping,
+        respondedAt
       };
     }
 
@@ -800,18 +876,20 @@ try {
       });
       elements.statModes.textContent = uniqueModes.size > 0 ? String(uniqueModes.size) : '–';
 
-      const players = new Set();
+      let totalPlayers = 0;
       filteredServers.forEach((server) => {
-        server.players.forEach((player) => {
-          players.add(player.toLowerCase());
-        });
+        if (Number.isFinite(server.playerCount)) {
+          totalPlayers += server.playerCount;
+        } else {
+          totalPlayers += server.players.length;
+        }
       });
-      elements.statPlayers.textContent = players.size > 0 ? String(players.size) : '–';
+      elements.statPlayers.textContent = totalPlayers > 0 ? String(totalPlayers) : '–';
     }
 
-    function humanizeMode(mode) {
+    function humanizeMode(mode, fallbackLabel = null) {
       if (!mode) {
-        return '';
+        return fallbackLabel || '';
       }
       const translations = MODE_TRANSLATIONS[state.language] || {};
       if (Object.prototype.hasOwnProperty.call(translations, mode)) {
@@ -820,6 +898,9 @@ try {
       const fallback = MODE_TRANSLATIONS.en || {};
       if (Object.prototype.hasOwnProperty.call(fallback, mode)) {
         return fallback[mode];
+      }
+      if (fallbackLabel) {
+        return fallbackLabel;
       }
       return mode;
     }
@@ -835,15 +916,12 @@ try {
       return t('servers.table.playersOnly', { current });
     }
 
-    function formatLastSeen(server) {
-      if (!server.lastSeen) {
+    function formatPing(server) {
+      if (!Number.isFinite(server.ping)) {
         return '–';
       }
-      const date = new Date(server.lastSeen);
-      if (Number.isNaN(date.getTime())) {
-        return server.lastSeen;
-      }
-      return dateFormatter.format(date);
+      const value = Math.max(0, Math.round(server.ping));
+      return t('servers.table.pingValue', { ping: value });
     }
 
     function render() {
@@ -859,7 +937,9 @@ try {
           server.name || '',
           server.address || '',
           server.map || '',
+          server.modeLabel || '',
           server.mode || '',
+          server.mod || '',
           server.players.join(' ')
         ]
           .join(' ')
@@ -875,46 +955,48 @@ try {
         filtered
           .slice()
           .sort((a, b) => {
-            const dateA = a.lastSeen ? new Date(a.lastSeen).getTime() : 0;
-            const dateB = b.lastSeen ? new Date(b.lastSeen).getTime() : 0;
-            return dateB - dateA;
+            const pingA = Number.isFinite(a.ping) ? a.ping : Number.POSITIVE_INFINITY;
+            const pingB = Number.isFinite(b.ping) ? b.ping : Number.POSITIVE_INFINITY;
+            if (pingA !== pingB) {
+              return pingA - pingB;
+            }
+            const nameA = a.name || '';
+            const nameB = b.name || '';
+            return nameA.localeCompare(nameB, getLocale(), { sensitivity: 'base' });
           })
           .forEach((server) => {
             const row = document.createElement('tr');
             const displayName = server.name || t('servers.table.unknown');
-            const displayMode = humanizeMode(server.mode);
+            const displayMode = humanizeMode(server.mode, server.modeLabel);
             const players = formatPlayers(server);
-            const lastSeen = formatLastSeen(server);
+            const ping = formatPing(server);
             const details = [];
             if (server.address) {
               details.push(`<span class="mono">${escapeHtml(server.address)}</span>`);
+            } else if (server.ip && server.port != null) {
+              details.push(`<span class="mono">${escapeHtml(`${server.ip}:${server.port}`)}</span>`);
             }
             if (server.map) {
               details.push(`<span>${escapeHtml(server.map)}</span>`);
             }
-            if (server.players.length > 0) {
-              details.push(`<span>${escapeHtml(t('servers.table.playerList', { list: server.players.join(', ') }))}</span>`);
+            if (server.mod) {
+              details.push(`<span>${escapeHtml(t('servers.table.mod', { mod: server.mod }))}</span>`);
             }
-            if (server.lastMatchId) {
-              details.push(`<span>${escapeHtml(server.lastMatchId)}</span>`);
-            }
-            const lastDetails = [];
-            if (lastSeen) {
-              lastDetails.push(`<span>${escapeHtml(lastSeen)}</span>`);
-            }
-            if (server.matchCount != null) {
-              lastDetails.push(`<span>${escapeHtml(t('servers.table.matchCount', { count: server.matchCount }))}</span>`);
-            }
+            const detailHtml = details.length > 0 ? `<div class="meta">${details.join('')}</div>` : '';
+            const playerMeta = server.players.length > 0
+              ? `<div class="meta">${escapeHtml(t('servers.table.playerList', { list: server.players.join(', ') }))}</div>`
+              : '';
             row.innerHTML = `
               <td>
                 <strong>${escapeHtml(displayName)}</strong>
-                <div class="meta">${details.join('')}</div>
+                ${detailHtml}
               </td>
               <td>${escapeHtml(displayMode)}</td>
-              <td>${escapeHtml(players)}</td>
               <td>
-                <div class="meta">${lastDetails.join('')}</div>
+                ${escapeHtml(players)}
+                ${playerMeta}
               </td>
+              <td>${escapeHtml(ping)}</td>
             `;
             elements.tableBody.appendChild(row);
           });
@@ -937,6 +1019,7 @@ try {
         const payload = await response.json();
         const list = Array.isArray(payload.servers) ? payload.servers : [];
         state.servers = list.map(normalizeServer);
+        state.summary = payload.summary && typeof payload.summary === 'object' ? payload.summary : null;
         state.lastUpdated = typeof payload.generatedAt === 'string' ? payload.generatedAt : new Date().toISOString();
         updateModeOptions();
         setStatus('');
@@ -956,18 +1039,29 @@ try {
       allOption.textContent = t('servers.filters.mode.all');
       elements.mode.appendChild(allOption);
       const modes = [];
+      const labels = new Map();
       state.servers.forEach((server) => {
-        if (server.mode && !existing.has(server.mode)) {
+        if (!server.mode) {
+          return;
+        }
+        if (!labels.has(server.mode)) {
+          labels.set(server.mode, humanizeMode(server.mode, server.modeLabel));
+        }
+        if (!existing.has(server.mode)) {
           existing.add(server.mode);
           modes.push(server.mode);
         }
       });
       modes
-        .sort((a, b) => humanizeMode(a).localeCompare(humanizeMode(b), getLocale()))
+        .sort((a, b) => {
+          const labelA = labels.get(a) || humanizeMode(a);
+          const labelB = labels.get(b) || humanizeMode(b);
+          return labelA.localeCompare(labelB, getLocale());
+        })
         .forEach((mode) => {
           const option = document.createElement('option');
           option.value = mode;
-          option.textContent = humanizeMode(mode);
+          option.textContent = labels.get(mode) || humanizeMode(mode);
           elements.mode.appendChild(option);
         });
       if (existing.has(currentValue)) {
@@ -4699,6 +4793,10 @@ function handle_get(array $segments): void
     }
 
     if ($segments === ['servers']) {
+        if (!function_exists('socket_create')) {
+            send_error(500, 'PHP sockets extension is required to query the master server.');
+        }
+
         $payload = build_server_overview();
         send_json($payload, 200);
         return;
@@ -4777,728 +4875,458 @@ function handle_delete(array $segments): void
 
 function build_server_overview(): array
 {
-    $matches = load_all_matches();
-    $servers = [];
-
-    foreach ($matches as $match) {
-        if (!is_array($match)) {
-            continue;
+    $host = DEFAULT_MASTER_HOST;
+    $hostParam = $_GET['masterHost'] ?? $_GET['master_host'] ?? null;
+    if (is_string($hostParam)) {
+        $candidate = trim($hostParam);
+        if ($candidate !== '' && preg_match('/^[A-Za-z0-9._-]+$/', $candidate)) {
+            $host = $candidate;
         }
-
-        $info = extract_server_info_from_match($match);
-        if ($info === null) {
-            continue;
-        }
-
-        $key = $info['key'];
-        if (!isset($servers[$key])) {
-            $servers[$key] = [
-                'name' => $info['name'],
-                'address' => $info['address'],
-                'ip' => $info['ip'],
-                'port' => $info['port'],
-                'mode' => $info['mode'],
-                'map' => $info['map'],
-                'country' => $info['country'],
-                'players' => $info['players'],
-                'playerCount' => $info['playerCount'],
-                'maxPlayers' => $info['maxPlayers'],
-                'lastSeenTs' => $info['lastSeenTs'],
-                'lastSeenRaw' => $info['lastSeenRaw'],
-                'lastMatchId' => $info['matchId'],
-                'matchCount' => 1,
-            ];
-            continue;
-        }
-
-        $existing = &$servers[$key];
-        $existing['matchCount'] = ($existing['matchCount'] ?? 0) + 1;
-
-        if ($existing['name'] === null && $info['name'] !== null) {
-            $existing['name'] = $info['name'];
-        }
-        if ($existing['address'] === null && $info['address'] !== null) {
-            $existing['address'] = $info['address'];
-        }
-        if ($existing['ip'] === null && $info['ip'] !== null) {
-            $existing['ip'] = $info['ip'];
-        }
-        if ($existing['port'] === null && $info['port'] !== null) {
-            $existing['port'] = $info['port'];
-        }
-        if ($existing['country'] === null && $info['country'] !== null) {
-            $existing['country'] = $info['country'];
-        }
-        if ($info['mode'] !== null && $existing['mode'] === null) {
-            $existing['mode'] = $info['mode'];
-        }
-        if ($info['map'] !== null && $existing['map'] === null) {
-            $existing['map'] = $info['map'];
-        }
-
-        if ($info['maxPlayers'] !== null) {
-            if ($existing['maxPlayers'] === null) {
-                $existing['maxPlayers'] = $info['maxPlayers'];
-            } else {
-                $existing['maxPlayers'] = max((int) $existing['maxPlayers'], (int) $info['maxPlayers']);
-            }
-        }
-
-        if ($info['playerCount'] !== null) {
-            if ($existing['playerCount'] === null) {
-                $existing['playerCount'] = $info['playerCount'];
-            } else {
-                $existing['playerCount'] = max((int) $existing['playerCount'], (int) $info['playerCount']);
-            }
-        }
-
-        $existing['players'] = merge_player_lists($existing['players'], $info['players']);
-
-        if ($info['lastSeenTs'] !== null && ($existing['lastSeenTs'] === null || $info['lastSeenTs'] > $existing['lastSeenTs'])) {
-            $existing['lastSeenTs'] = $info['lastSeenTs'];
-            $existing['lastSeenRaw'] = $info['lastSeenRaw'];
-            $existing['lastMatchId'] = $info['matchId'];
-            if ($info['mode'] !== null) {
-                $existing['mode'] = $info['mode'];
-            }
-            if ($info['map'] !== null) {
-                $existing['map'] = $info['map'];
-            }
-        }
-
-        unset($existing);
     }
 
-    $result = [];
-    foreach ($servers as $server) {
-        $players = normalize_player_list($server['players']);
-        $playerCount = $server['playerCount'];
-        if ($playerCount === null && $players !== []) {
-            $playerCount = count($players);
+    $port = DEFAULT_MASTER_PORT;
+    $portParam = $_GET['masterPort'] ?? $_GET['master_port'] ?? null;
+    if ($portParam !== null && $portParam !== '') {
+        $portCandidate = (int) $portParam;
+        if ($portCandidate > 0 && $portCandidate <= 65535) {
+            $port = $portCandidate;
         }
+    }
 
-        $lastSeen = null;
-        if ($server['lastSeenTs'] !== null) {
-            $lastSeen = gmdate('c', $server['lastSeenTs']);
-        } elseif (is_string($server['lastSeenRaw']) && trim($server['lastSeenRaw']) !== '') {
-            $lastSeen = $server['lastSeenRaw'];
+    $limit = DEFAULT_MASTER_LIMIT;
+    $limitParam = $_GET['limit'] ?? null;
+    if ($limitParam !== null && $limitParam !== '') {
+        $limitCandidate = (int) $limitParam;
+        if ($limitCandidate > 0) {
+            $limit = min($limitCandidate, 256);
         }
+    }
 
-        $result[] = [
-            'name' => $server['name'],
-            'address' => $server['address'],
-            'ip' => $server['ip'],
-            'port' => $server['port'],
-            'mode' => $server['mode'],
-            'map' => $server['map'],
-            'country' => $server['country'],
-            'players' => $players,
-            'playerCount' => $playerCount,
-            'maxPlayers' => $server['maxPlayers'],
-            'lastSeen' => $lastSeen,
-            'lastMatchId' => $server['lastMatchId'],
-            'matchCount' => $server['matchCount'],
+    $timeout = DEFAULT_MASTER_TIMEOUT;
+    $timeoutParam = $_GET['timeout'] ?? $_GET['masterTimeout'] ?? null;
+    if ($timeoutParam !== null && $timeoutParam !== '') {
+        $timeoutCandidate = (int) $timeoutParam;
+        if ($timeoutCandidate >= 1 && $timeoutCandidate <= 10) {
+            $timeout = $timeoutCandidate;
+        }
+    }
+
+    $addressLimit = min(max($limit * 3, $limit), 256);
+    $addresses = query_master_server_list($host, $port, $timeout, max($addressLimit, 1));
+    $servers = [];
+
+    foreach ($addresses as $entry) {
+        if (count($servers) >= $limit) {
+            break;
+        }
+        $status = query_server_status($entry['ip'], $entry['port'], $timeout);
+        if ($status === null) {
+            continue;
+        }
+        $servers[] = [
+            'name' => $status['hostname'],
+            'rawName' => $status['hostnameRaw'],
+            'address' => $entry['address'],
+            'ip' => $entry['ip'],
+            'port' => $entry['port'],
+            'map' => $status['map'],
+            'mode' => $status['modeKey'],
+            'modeName' => $status['modeName'],
+            'mod' => $status['mod'],
+            'players' => $status['players'],
+            'playerDetails' => $status['playerDetails'],
+            'playerCount' => $status['numPlayers'],
+            'maxPlayers' => $status['maxPlayers'],
+            'ping' => $status['ping'],
+            'respondedAt' => $status['respondedAt'],
+            'info' => $status['info'],
         ];
     }
 
-    usort($result, static function (array $a, array $b): int {
-        $timeA = isset($a['lastSeen']) ? strtotime((string) $a['lastSeen']) : 0;
-        $timeB = isset($b['lastSeen']) ? strtotime((string) $b['lastSeen']) : 0;
-        return $timeB <=> $timeA;
-    });
+    $totalListed = count($addresses);
+    $reachable = count($servers);
+    $unreachable = max(0, $totalListed - $reachable);
 
     return [
+        'master' => [
+            'host' => $host,
+            'port' => $port,
+            'timeout' => $timeout,
+        ],
+        'summary' => [
+            'totalListed' => $totalListed,
+            'reachable' => $reachable,
+            'unreachable' => $unreachable,
+        ],
+        'limit' => $limit,
         'generatedAt' => gmdate('c'),
-        'servers' => $result,
+        'servers' => array_values($servers),
     ];
 }
 
-function merge_player_lists(array $existing, array $incoming): array
+function query_master_server_list(string $host, int $port, int $timeout, int $limit): array
 {
-    $merged = [];
-    foreach ($existing as $player) {
-        if (is_string($player)) {
-            $merged[] = $player;
+    $limit = max(1, min($limit, 512));
+    $socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+    if ($socket === false) {
+        return [];
+    }
+
+    @socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, ['sec' => $timeout, 'usec' => 0]);
+    @socket_set_option($socket, SOL_SOCKET, SO_SNDTIMEO, ['sec' => $timeout, 'usec' => 0]);
+
+    $message = "\xFF\xFF\xFF\xFFgetservers 68 empty full\x00";
+    @socket_sendto($socket, $message, strlen($message), 0, $host, $port);
+
+    $servers = [];
+    $seen = [];
+    $complete = false;
+
+    while (!$complete && count($servers) < $limit) {
+        $buffer = '';
+        $remoteHost = '';
+        $remotePort = 0;
+        $bytes = @socket_recvfrom($socket, $buffer, 4096, 0, $remoteHost, $remotePort);
+        if ($bytes === false || $bytes === 0) {
+            break;
+        }
+
+        $parsed = parse_master_server_payload($buffer);
+        foreach ($parsed['servers'] as $entry) {
+            $key = $entry['address'];
+            if (!isset($seen[$key])) {
+                $seen[$key] = true;
+                $servers[] = $entry;
+                if (count($servers) >= $limit) {
+                    break;
+                }
+            }
+        }
+
+        if ($parsed['complete']) {
+            $complete = true;
         }
     }
-    foreach ($incoming as $player) {
-        if (is_string($player)) {
-            $merged[] = $player;
-        }
-    }
-    return normalize_player_list($merged);
+
+    @socket_close($socket);
+
+    return $servers;
 }
 
-function normalize_player_list(array $players): array
+function parse_master_server_payload(string $payload): array
 {
-    $normalized = [];
-    $seen = [];
-    foreach ($players as $player) {
-        if (!is_string($player)) {
+    $result = [
+        'servers' => [],
+        'complete' => false,
+    ];
+
+    $marker = 'getserversResponse';
+    $start = strpos($payload, $marker);
+    if ($start === false) {
+        return $result;
+    }
+
+    $dataPosition = strpos($payload, '\\', $start);
+    if ($dataPosition === false) {
+        return $result;
+    }
+
+    $data = substr($payload, $dataPosition);
+    if ($data === false) {
+        return $result;
+    }
+
+    $length = strlen($data);
+    $offset = 0;
+
+    while ($offset < $length) {
+        if ($data[$offset] !== '\\') {
+            $offset++;
             continue;
         }
-        $trimmed = trim($player);
-        if ($trimmed === '') {
+
+        $offset++;
+        if ($offset >= $length) {
+            break;
+        }
+
+        if (substr($data, $offset, 3) === 'EOT') {
+            $result['complete'] = true;
+            break;
+        }
+
+        if ($offset + 5 >= $length) {
+            break;
+        }
+
+        $chunk = substr($data, $offset, 6);
+        if ($chunk === false || strlen($chunk) < 6) {
+            break;
+        }
+
+        $ipBytes = unpack('C4', substr($chunk, 0, 4));
+        $portBytes = unpack('n', substr($chunk, 4, 2));
+        if ($ipBytes === false || $portBytes === false) {
+            break;
+        }
+
+        $ip = implode('.', $ipBytes);
+        $port = (int) $portBytes[1];
+        if ($port <= 0 || $port > 65535) {
+            $offset += 6;
             continue;
         }
-        $lower = strtolower($trimmed);
-        if (isset($seen[$lower])) {
-            continue;
+
+        $result['servers'][] = [
+            'ip' => $ip,
+            'port' => $port,
+            'address' => $ip . ':' . $port,
+        ];
+
+        $offset += 6;
+    }
+
+    return $result;
+}
+
+function query_server_status(string $ip, int $port, int $timeout): ?array
+{
+    $socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+    if ($socket === false) {
+        return null;
+    }
+
+    @socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, ['sec' => $timeout, 'usec' => 0]);
+    @socket_set_option($socket, SOL_SOCKET, SO_SNDTIMEO, ['sec' => $timeout, 'usec' => 0]);
+
+    $request = "\xFF\xFF\xFF\xFFgetstatus\x00";
+    $start = microtime(true);
+    @socket_sendto($socket, $request, strlen($request), 0, $ip, $port);
+
+    $buffer = '';
+    $remoteHost = '';
+    $remotePort = 0;
+    $bytes = @socket_recvfrom($socket, $buffer, 65535, 0, $remoteHost, $remotePort);
+    @socket_close($socket);
+
+    if ($bytes === false || $bytes === 0) {
+        return null;
+    }
+
+    $parsed = parse_status_response($buffer);
+    if ($parsed === null) {
+        return null;
+    }
+
+    $ping = (int) round((microtime(true) - $start) * 1000);
+
+    $info = $parsed['info'];
+    $infoLower = array_change_key_case($info, CASE_LOWER);
+
+    $hostnameRaw = $info['sv_hostname'] ?? $info['hostname'] ?? null;
+    $hostname = $hostnameRaw !== null ? trim(strip_quake_color_codes($hostnameRaw)) : null;
+    if ($hostname === '') {
+        $hostname = null;
+    }
+
+    $mapRaw = $info['mapname'] ?? $info['map'] ?? null;
+    $map = $mapRaw !== null ? trim($mapRaw) : null;
+    if ($map === '') {
+        $map = null;
+    }
+
+    $modRaw = $infoLower['game'] ?? $infoLower['fs_game'] ?? null;
+    $mod = is_string($modRaw) ? trim($modRaw) : null;
+    if ($mod === '') {
+        $mod = null;
+    }
+
+    [$modeKey, $modeName] = resolve_gametype_from_info($infoLower, $info);
+
+    $playerDetails = [];
+    foreach ($parsed['players'] as $player) {
+        $nameRaw = is_string($player['name']) ? $player['name'] : '';
+        $decoded = stripcslashes($nameRaw);
+        $name = trim(strip_quake_color_codes($decoded));
+        if ($name === '') {
+            $name = null;
         }
-        $seen[$lower] = true;
-        $normalized[] = $trimmed;
-        if (count($normalized) >= 40) {
+
+        $playerDetails[] = [
+            'name' => $name,
+            'rawName' => $decoded,
+            'score' => (int) $player['score'],
+            'ping' => (int) $player['ping'],
+        ];
+    }
+
+    $playerNames = array_values(array_filter(array_map(static function (array $player): ?string {
+        return $player['name'];
+    }, $playerDetails)));
+
+    $numPlayers = null;
+    foreach (['clients', 'players'] as $key) {
+        if (isset($infoLower[$key]) && is_numeric($infoLower[$key])) {
+            $numPlayers = max(0, (int) $infoLower[$key]);
             break;
         }
     }
-    sort($normalized, SORT_NATURAL | SORT_FLAG_CASE);
-    return $normalized;
-}
-
-function extract_server_info_from_match(array $match): ?array
-{
-    $matchId = find_string_in_match($match, [
-        'matchId',
-        'meta.matchId',
-        'match.matchId',
-        'match.id',
-        'id',
-    ]);
-
-    $receivedAtRaw = find_string_in_match($match, [
-        'receivedAt',
-        'received_at',
-        'meta.receivedAt',
-        'meta.received_at',
-        'match.receivedAt',
-        'match.received_at',
-        'timestamp',
-        'match.timestamp',
-        'match.matchTimestamp',
-        'serverStartTime',
-        'server.startTime',
-        'server.time',
-        'time',
-        'createdAt',
-        'meta.timestamp',
-        'stats.generatedAt',
-    ]);
-
-    $receivedAt = parse_datetime_candidate($receivedAtRaw);
-    if ($receivedAt === null) {
-        $receivedAt = parse_datetime_candidate($match['receivedAt'] ?? null);
-    }
-    if ($receivedAt === null && $matchId !== null) {
-        $receivedAt = parse_datetime_from_identifier($matchId);
+    if ($numPlayers === null) {
+        $numPlayers = count($playerNames);
     }
 
-    $name = find_string_in_match($match, [
-        'server.name',
-        'server.hostname',
-        'server.serverName',
-        'server.servername',
-        'server.info.hostname',
-        'serverInfo.hostname',
-        'serverConfig.hostname',
-        'meta.server',
-        'meta.serverName',
-        'match.server',
-        'info.hostname',
-    ], ['hostname', 'server']);
-
-    $address = find_string_in_match($match, [
-        'server.address',
-        'server.endpoint',
-        'server.url',
-        'server.connection',
-        'meta.serverAddress',
-    ], ['address', 'endpoint']);
-
-    $ip = find_string_in_match($match, [
-        'server.ip',
-        'server.ipAddress',
-        'server.ip_address',
-        'server.ipaddress',
-        'server.host',
-        'match.serverIp',
-        'meta.serverIp',
-        'info.ip',
-        'info.address',
-    ], ['ip']);
-
-    $portValue = find_numeric_in_match($match, [
-        'server.port',
-        'server.gamePort',
-        'server.hostPort',
-        'server.hostport',
-        'meta.serverPort',
-        'match.serverPort',
-        'port',
-        'info.port',
-    ], ['port']);
-    $port = $portValue !== null ? max(0, min(65535, (int) $portValue)) : null;
-
-    $mode = find_string_in_match($match, [
-        'mode',
-        'gameMode',
-        'server.mode',
-        'server.gameMode',
-        'server.gametype',
-        'match.mode',
-        'match.gameType',
-        'meta.mode',
-        'info.g_gametype',
-    ], ['mode', 'gametype']);
-
-    $map = find_string_in_match($match, [
-        'map',
-        'server.map',
-        'server.mapName',
-        'match.map',
-        'match.mapName',
-        'level.map',
-        'level.mapName',
-        'info.mapname',
-        'meta.map',
-        'meta.mapName',
-    ], ['map', 'track', 'arena']);
-
-    $country = find_string_in_match($match, [
-        'server.country',
-        'server.location.country',
-        'meta.country',
-        'info.country',
-    ], ['country', 'region']);
-
-    $playerCountValue = find_numeric_in_match($match, [
-        'server.players.current',
-        'server.playersCount',
-        'server.playerCount',
-        'server.clients',
-        'server.numPlayers',
-        'match.playerCount',
-        'match.clients',
-        'stats.players',
-        'totals.players',
-        'summary.players',
-        'info.clients',
-        'info.players',
-        'meta.playerCount',
-        'players.count',
-    ], ['players', 'clients']);
-
-    $maxPlayersValue = find_numeric_in_match($match, [
-        'server.maxPlayers',
-        'server.maxclients',
-        'server.clients.max',
-        'server.maxClients',
-        'match.maxPlayers',
-        'match.maxclients',
-        'info.maxClients',
-        'info.maxclients',
-        'meta.maxPlayers',
-    ], ['maxclients', 'maxplayers', 'slots']);
-
-    $playerCount = $playerCountValue !== null ? max(0, min(128, (int) $playerCountValue)) : null;
-    $maxPlayers = $maxPlayersValue !== null ? max(0, min(128, (int) $maxPlayersValue)) : null;
-
-    $players = collect_player_names($match);
-
-    $addressString = $address;
-    if ($ip !== null && $port !== null) {
-        $addressString = $ip . ':' . $port;
-    } elseif ($addressString === null && $ip !== null) {
-        $addressString = $ip;
-    }
-
-    $key = null;
-    if ($ip !== null && $port !== null) {
-        $key = strtolower($ip) . ':' . $port;
-    } elseif ($addressString !== null) {
-        $key = strtolower($addressString);
-    } elseif ($name !== null) {
-        $key = strtolower($name);
-    } else {
-        return null;
+    $maxPlayers = null;
+    foreach (['sv_maxclients', 'maxclients', 'sv_max_clients'] as $key) {
+        if (isset($infoLower[$key]) && is_numeric($infoLower[$key])) {
+            $maxPlayers = max(0, (int) $infoLower[$key]);
+            break;
+        }
     }
 
     return [
-        'key' => $key,
-        'name' => $name,
-        'address' => $addressString,
-        'ip' => $ip,
-        'port' => $port,
-        'mode' => $mode,
+        'hostname' => $hostname,
+        'hostnameRaw' => $hostnameRaw,
         'map' => $map,
-        'country' => $country,
-        'players' => $players,
-        'playerCount' => $playerCount,
+        'modeKey' => $modeKey,
+        'modeName' => $modeName,
+        'mod' => $mod,
+        'numPlayers' => $numPlayers,
         'maxPlayers' => $maxPlayers,
-        'lastSeenTs' => $receivedAt,
-        'lastSeenRaw' => $receivedAtRaw,
-        'matchId' => $matchId,
+        'ping' => $ping >= 0 ? $ping : null,
+        'players' => $playerNames,
+        'playerDetails' => $playerDetails,
+        'info' => $info,
+        'respondedAt' => gmdate('c'),
     ];
 }
 
-function find_string_in_match(array $data, array $paths, array $keywords = []): ?string
+function parse_status_response(string $payload): ?array
 {
-    foreach ($paths as $path) {
-        $value = value_at_path($data, $path);
-        if (is_string($value)) {
-            $trimmed = trim($value);
-            if ($trimmed !== '') {
-                return $trimmed;
-            }
-        }
-    }
-
-    if ($keywords !== []) {
-        $found = search_string_by_keywords($data, $keywords);
-        if ($found !== null) {
-            return $found;
-        }
-    }
-
-    return null;
-}
-
-function find_numeric_in_match(array $data, array $paths, array $keywords = []): ?int
-{
-    foreach ($paths as $path) {
-        $value = value_at_path($data, $path);
-        $numeric = parse_numeric_value($value);
-        if ($numeric !== null) {
-            return $numeric;
-        }
-    }
-
-    if ($keywords !== []) {
-        $found = search_numeric_by_keywords($data, $keywords);
-        if ($found !== null) {
-            return $found;
-        }
-    }
-
-    return null;
-}
-
-function value_at_path(array $data, string $path)
-{
-    $segments = explode('.', $path);
-    $current = $data;
-    foreach ($segments as $segment) {
-        if (!is_array($current)) {
-            return null;
-        }
-        if (array_key_exists($segment, $current)) {
-            $current = $current[$segment];
-            continue;
-        }
-        $found = false;
-        foreach ($current as $key => $value) {
-            if (is_string($key) && strcasecmp($key, $segment) === 0) {
-                $current = $value;
-                $found = true;
-                break;
-            }
-        }
-        if (!$found) {
-            return null;
-        }
-    }
-    return $current;
-}
-
-function search_string_by_keywords($node, array $keywords, int $depth = 0): ?string
-{
-    if ($depth > 6 || !is_array($node)) {
+    $prefix = "\xFF\xFF\xFF\xFFstatusResponse\n";
+    if (strncmp($payload, $prefix, strlen($prefix)) !== 0) {
         return null;
     }
-    foreach ($node as $key => $value) {
-        if (is_string($key)) {
-            $lower = strtolower($key);
-            foreach ($keywords as $keyword) {
-                if (strpos($lower, $keyword) !== false) {
-                    if (is_string($value)) {
-                        $trimmed = trim($value);
-                        if ($trimmed !== '') {
-                            return $trimmed;
-                        }
-                    }
-                }
-            }
-        }
-        if (is_array($value)) {
-            $found = search_string_by_keywords($value, $keywords, $depth + 1);
-            if ($found !== null) {
-                return $found;
-            }
-        }
-    }
-    return null;
-}
 
-function search_numeric_by_keywords($node, array $keywords, int $depth = 0): ?int
-{
-    if ($depth > 6 || !is_array($node)) {
+    $body = substr($payload, strlen($prefix));
+    if ($body === false) {
         return null;
     }
-    foreach ($node as $key => $value) {
-        if (is_string($key)) {
-            $lower = strtolower($key);
-            foreach ($keywords as $keyword) {
-                if (strpos($lower, $keyword) !== false) {
-                    $numeric = parse_numeric_value($value);
-                    if ($numeric !== null) {
-                        return $numeric;
-                    }
-                }
-            }
-        }
-        if (is_array($value)) {
-            $found = search_numeric_by_keywords($value, $keywords, $depth + 1);
-            if ($found !== null) {
-                return $found;
-            }
-        }
-    }
-    return null;
-}
 
-function parse_numeric_value($value): ?int
-{
-    if (is_int($value)) {
-        return $value;
-    }
-    if (is_float($value)) {
-        if (!is_finite($value)) {
-            return null;
-        }
-        return (int) round($value);
-    }
-    if (is_string($value)) {
-        $trimmed = trim($value);
-        if ($trimmed === '') {
-            return null;
-        }
-        if (!preg_match('/^-?\d+$/', $trimmed)) {
-            return null;
-        }
-        return (int) $trimmed;
-    }
-    return null;
-}
-
-function parse_datetime_candidate($value): ?int
-{
-    if ($value instanceof DateTimeInterface) {
-        return $value->getTimestamp();
-    }
-    if (is_int($value)) {
-        return $value > 0 ? $value : null;
-    }
-    if (is_float($value)) {
-        if (!is_finite($value)) {
-            return null;
-        }
-        return (int) round($value > 1_000_000_000_000 ? $value / 1000 : $value);
-    }
-    if (is_string($value)) {
-        $trimmed = trim($value);
-        if ($trimmed === '') {
-            return null;
-        }
-        if (preg_match('/^-?\d+$/', $trimmed)) {
-            $numeric = (int) $trimmed;
-            if ($numeric > 1_000_000_000_000) {
-                $numeric = (int) round($numeric / 1000);
-            }
-            return $numeric > 0 ? $numeric : null;
-        }
-        $time = strtotime($trimmed);
-        return $time === false ? null : $time;
-    }
-    return null;
-}
-
-function parse_datetime_from_identifier(?string $identifier): ?int
-{
-    if ($identifier === null) {
+    $lines = preg_split('/\r?\n/', $body);
+    if ($lines === false || $lines === []) {
         return null;
     }
-    if (preg_match('/(\d{4})(\d{2})(\d{2})[-_](\d{2})(\d{2})(\d{2})/', $identifier, $matches) === 1) {
-        return gmmktime((int) $matches[4], (int) $matches[5], (int) $matches[6], (int) $matches[2], (int) $matches[3], (int) $matches[1]);
+
+    $infoLine = array_shift($lines);
+    if ($infoLine === null) {
+        return null;
     }
-    if (preg_match('/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/', $identifier, $matches) === 1) {
-        return gmmktime((int) $matches[4], (int) $matches[5], (int) $matches[6], (int) $matches[2], (int) $matches[3], (int) $matches[1]);
+
+    $info = [];
+    $tokens = explode('\\', $infoLine);
+    $count = count($tokens);
+    for ($i = 1; $i + 1 < $count; $i += 2) {
+        $key = trim($tokens[$i]);
+        $value = $tokens[$i + 1];
+        if ($key === '') {
+            continue;
+        }
+        $info[$key] = $value;
     }
-    return null;
+
+    $players = [];
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '') {
+            continue;
+        }
+        if (preg_match('/^(-?\d+)\s+(-?\d+)\s+"(.*)"$/', $line, $matches) === 1) {
+            $players[] = [
+                'score' => (int) $matches[1],
+                'ping' => (int) $matches[2],
+                'name' => $matches[3],
+            ];
+        }
+    }
+
+    return [
+        'info' => $info,
+        'players' => $players,
+    ];
 }
 
-function collect_player_names(array $match): array
+function strip_quake_color_codes(string $value): string
 {
-    $names = [];
-    $queue = [$match];
-    $keywords = ['player', 'driver', 'racer', 'pilot', 'nickname', 'nick'];
+    return preg_replace('/\^[0-9A-Za-z]/', '', $value) ?? $value;
+}
 
-    while ($queue !== []) {
-        $current = array_shift($queue);
-        if (!is_array($current)) {
-            continue;
-        }
-
-        $keys = [];
-        foreach ($current as $key => $value) {
-            if (is_array($value)) {
-                $queue[] = $value;
-            }
-            if (is_string($key)) {
-                $keys[] = strtolower($key);
-            }
-        }
-
-        $hasPlayerContext = false;
-        foreach ($keys as $key) {
-            if ($key === 'players' || $key === 'scoreboard' || $key === 'results' || $key === 'participants' || $key === 'entries' || $key === 'racers' || $key === 'drivers') {
-                $hasPlayerContext = true;
-                break;
-            }
-            foreach ($keywords as $keyword) {
-                if (strpos($key, $keyword) !== false) {
-                    $hasPlayerContext = true;
-                    break 2;
-                }
-            }
-        }
-
-        if (!$hasPlayerContext) {
-            continue;
-        }
-
-        foreach ($current as $key => $value) {
-            if (!is_string($key) || !is_string($value)) {
-                continue;
-            }
-            $lowerKey = strtolower($key);
-            if ($lowerKey === 'name') {
-                $trimmed = trim($value);
-            } else {
-                $matchesKeyword = false;
-                foreach ($keywords as $keyword) {
-                    if (strpos($lowerKey, $keyword) !== false) {
-                        $matchesKeyword = true;
-                        break;
-                    }
-                }
-                if (!$matchesKeyword) {
-                    continue;
-                }
-                $trimmed = trim($value);
-            }
-            if ($trimmed === '' || strlen($trimmed) > 64) {
-                continue;
-            }
-            $names[] = $trimmed;
-        }
-
-        if (count($names) >= 40) {
+function resolve_gametype_from_info(array $infoLower, array $infoOriginal): array
+{
+    $value = null;
+    foreach (['g_gametype', 'gametype', 'gametype_current', 'gametypevalue', 'gt_gametype'] as $key) {
+        if (isset($infoLower[$key]) && $infoLower[$key] !== '') {
+            $value = $infoLower[$key];
             break;
         }
     }
-
-    return normalize_player_list($names);
-}
-
-function load_arena_metadata(): array
-{
-    if (!is_dir(ARENA_DIR)) {
-        return [];
-    }
-
-    $files = glob(ARENA_DIR . '/*.arena');
-    if ($files === false) {
-        return [];
-    }
-
-    $metadata = [];
-
-    foreach ($files as $file) {
-        if (!is_readable($file)) {
-            continue;
-        }
-
-        $handle = fopen($file, 'rb');
-        if ($handle === false) {
-            continue;
-        }
-
-        $currentMap = null;
-        $currentLongname = null;
-
-        while (($line = fgets($handle)) !== false) {
-            $cleanLine = trim($line);
-            if ($cleanLine === '' || strncmp($cleanLine, '//', 2) === 0) {
-                continue;
-            }
-
-            if (strpos($cleanLine, '{') !== false) {
-                $currentMap = null;
-                $currentLongname = null;
-            }
-
-            if (preg_match('/\bmap\s+"([^"]+)"/i', $cleanLine, $mapMatch) === 1) {
-                $currentMap = $mapMatch[1];
-            }
-
-            if (preg_match('/\blongname\s+"([^"]+)"/i', $cleanLine, $longnameMatch) === 1) {
-                $currentLongname = $longnameMatch[1];
-            }
-
-            if ($currentMap !== null && $currentLongname !== null) {
-                $mapKey = trim($currentMap);
-                $longname = trim($currentLongname);
-                if ($mapKey !== '' && $longname !== '') {
-                    $metadata[$mapKey] = $longname;
-                }
-                $currentMap = null;
-                $currentLongname = null;
-            }
-
-            if (strpos($cleanLine, '}') !== false) {
-                $currentMap = null;
-                $currentLongname = null;
+    if ($value === null) {
+        foreach (['g_gametype', 'gametype'] as $key) {
+            if (isset($infoOriginal[$key]) && $infoOriginal[$key] !== '') {
+                $value = $infoOriginal[$key];
+                break;
             }
         }
-
-        fclose($handle);
     }
 
-    return $metadata;
-}
-
-function normalize_map_key(string $map): string
-{
-    $trimmed = trim($map);
-    if ($trimmed === '') {
-        return '';
+    $label = null;
+    foreach (['gametype_name', 'gamename', 'game'] as $key) {
+        if (isset($infoLower[$key]) && $infoLower[$key] !== '') {
+            $label = $infoLower[$key];
+            break;
+        }
     }
-
-    $withoutExtension = preg_replace('/\.[^\.\\\/]+$/', '', $trimmed);
-    if ($withoutExtension === null || $withoutExtension === '') {
-        $withoutExtension = $trimmed;
-    }
-
-    $segments = preg_split('/[\\\/]/', $withoutExtension);
-    if ($segments === false || $segments === []) {
-        $base = $withoutExtension;
-    } else {
-        $base = end($segments);
-        if ($base === false || $base === null || $base === '') {
-            $base = $withoutExtension;
+    if ($label === null) {
+        foreach (['gametype_name', 'gamename', 'game'] as $key) {
+            if (isset($infoOriginal[$key]) && $infoOriginal[$key] !== '') {
+                $label = $infoOriginal[$key];
+                break;
+            }
         }
     }
 
-    return strtolower(trim((string) $base));
+    $valueString = $value !== null ? trim((string) $value) : '';
+    if ($valueString === '') {
+        $labelString = $label !== null ? trim((string) $label) : '';
+        if ($labelString === '') {
+            return [null, null];
+        }
+        $normalized = strtolower($labelString);
+        $normalized = preg_replace('/[^a-z0-9]+/', '_', $normalized) ?? '';
+        $normalized = trim($normalized, '_');
+        return [$normalized !== '' ? $normalized : null, $labelString];
+    }
+
+    if (ctype_digit($valueString)) {
+        $key = 'gametype_' . $valueString;
+        $labelString = $label !== null ? trim((string) $label) : '';
+        if ($labelString === '' && isset(MASTER_GAMETYPE_LABELS[$key])) {
+            $labelString = MASTER_GAMETYPE_LABELS[$key];
+        }
+        return [$key, $labelString !== '' ? $labelString : null];
+    }
+
+    $normalized = strtolower($valueString);
+    $normalized = preg_replace('/[^a-z0-9]+/', '_', $normalized) ?? '';
+    $normalized = trim($normalized, '_');
+    if ($normalized === '') {
+        $normalized = null;
+    }
+    $labelString = $label !== null ? trim((string) $label) : '';
+    if ($labelString === '' && $normalized !== null && isset(MASTER_GAMETYPE_LABELS[$normalized])) {
+        $labelString = MASTER_GAMETYPE_LABELS[$normalized];
+    }
+
+    return [$normalized, $labelString !== '' ? $labelString : null];
 }
 
 function load_all_matches(): array
