@@ -39,7 +39,9 @@ Jedes Match wird als einzelne JSON-Datei unter `data/<matchId>.json` abgelegt. S
 
 ## Web-Frontend
 
+
 Die Startseite von `index.php` liefert jetzt ein modernes Dashboard, das die gespeicherten Matches aus dem `data/`-Ordner direkt im Browser aufbereitet. Zusätzlich steht unter `/servers` eine zweite Oberfläche mit einem komfortablen Serverbrowser bereit, der live Daten von `master.ioquake3.org` und `dpmaster.deathmask.net` (gefiltert auf Q3Rally) abfragt. Highlights:
+
 
 * **Bestzeiten-Ranking** – Ein eigener Tab wertet Renn-Modi aus, erkennt Bestzeiten pro Spieler/Map und sortiert sie automatisch.
 * **Filter nach Spielmodus** – Die verfügbaren Modi werden automatisch aus den vorhandenen JSON-Dateien ermittelt.
@@ -47,7 +49,9 @@ Die Startseite von `index.php` liefert jetzt ein modernes Dashboard, das die ges
 * **Modus-Verteilung & Kennzahlen** – Karten zeigen Gesamtanzahl, letzte Aktualisierung sowie erkannte Spieler.
 * **Detailansicht pro Match** – Ein Klick öffnet Metadaten und das vollständige JSON, damit sich Fehler schnell nachvollziehen lassen.
 * **Konfigurierbares Lade-Limit** – Über die UI lässt sich bestimmen, wie viele Matches das Frontend auf einmal lädt.
+
 * **Serverbrowser mit Filter & Auto-Refresh** – Fragt beide Masterserver (ioquake3 und dpmaster) nach Q3Rally-Servern ab, zeigt erreichbare Server inklusive Spielerlisten, aktueller Map, Modus und Ping und aktualisiert sich auf Wunsch automatisch.
+
 
 **Hinweis:** Für die Masterserver-Abfrage muss die PHP-Erweiterung `sockets` aktiviert sein.
 
