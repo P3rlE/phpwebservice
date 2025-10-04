@@ -5455,6 +5455,135 @@ function resolve_gametype_from_info(array $infoLower, array $infoOriginal): arra
     return [$normalized, $labelString !== '' ? $labelString : null];
 }
 
+function load_arena_metadata(): array
+{
+    if (!is_dir(ARENA_DIR)) {
+        return [];
+    }
+
+    $files = glob(ARENA_DIR . '/*.arena');
+    if ($files === false) {
+        return [];
+    }
+
+    $maps = [];
+    foreach ($files as $file) {
+        if (!is_file($file)) {
+            continue;
+        }
+
+        $contents = file_get_contents($file);
+        if ($contents === false || $contents === '') {
+            continue;
+        }
+
+        $length = strlen($contents);
+        $depth = 0;
+        $buffer = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $contents[$i];
+
+            if ($char === '{') {
+                if ($depth === 0) {
+                    $buffer = '';
+                } else {
+                    $buffer .= $char;
+                }
+                $depth++;
+                continue;
+            }
+
+            if ($char === '}') {
+                if ($depth === 0) {
+                    continue;
+                }
+                $depth--;
+                if ($depth === 0) {
+                    $map = extract_arena_value($buffer, 'map');
+                    $longname = extract_arena_value($buffer, 'longname');
+                    if ($map !== null && $longname !== null) {
+                        $maps[$map] = $longname;
+                    }
+                    $buffer = '';
+                    continue;
+                }
+            }
+
+            if ($depth >= 1) {
+                $buffer .= $char;
+            }
+        }
+    }
+
+    return $maps;
+}
+
+function extract_arena_value(string $block, string $key): ?string
+{
+    $normalized = str_replace(["\r\n", "\r"], "\n", $block);
+    $lines = explode("\n", $normalized);
+
+    foreach ($lines as $line) {
+        if (!is_string($line)) {
+            continue;
+        }
+
+        $trimmedLine = trim($line);
+        if ($trimmedLine === '' || strncmp($trimmedLine, '//', 2) === 0) {
+            continue;
+        }
+
+        if (strncasecmp($trimmedLine, $key, strlen($key)) !== 0) {
+            continue;
+        }
+
+        $valuePart = trim(substr($trimmedLine, strlen($key)));
+        if ($valuePart === '') {
+            continue;
+        }
+
+        $firstChar = $valuePart[0];
+        if ($firstChar === '"' || $firstChar === "'") {
+            $quote = $firstChar;
+            $value = '';
+            $escaped = false;
+            $valueLength = strlen($valuePart);
+            for ($i = 1; $i < $valueLength; $i++) {
+                $char = $valuePart[$i];
+                if ($escaped) {
+                    $value .= $char;
+                    $escaped = false;
+                    continue;
+                }
+                if ($char === '\\') {
+                    $escaped = true;
+                    continue;
+                }
+                if ($char === $quote) {
+                    break;
+                }
+                $value .= $char;
+            }
+
+            $decoded = stripcslashes($value);
+            $trimmedValue = trim($decoded);
+            if ($trimmedValue !== '') {
+                return $trimmedValue;
+            }
+        } else {
+            $end = strcspn($valuePart, " \t");
+            $candidate = $end === strlen($valuePart) ? $valuePart : substr($valuePart, 0, $end);
+            $candidate = trim($candidate);
+            if ($candidate !== '') {
+                return $candidate;
+            }
+        }
+    }
+
+    return null;
+}
+
 function load_all_matches(): array
 {
     $files = glob(DATA_DIR . '/*.json');
@@ -5483,6 +5612,17 @@ function normalize_match_id(string $raw): string
     return trim((string) $normalized);
 }
 
+function normalize_map_key(string $raw): string
+{
+    $lower = strtolower($raw);
+    $normalized = preg_replace('/[^a-z0-9._-]+/', '_', $lower);
+    if ($normalized === null) {
+        return '';
+    }
+
+    return trim((string) $normalized, '_');
+}
+
 function send_json(array $payload, int $statusCode): void
 {
     http_response_code($statusCode);
@@ -5495,3 +5635,4 @@ function send_error(int $statusCode, string $message): void
 {
     send_json(['error' => $message], $statusCode);
 }
+
