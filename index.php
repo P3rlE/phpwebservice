@@ -4989,16 +4989,27 @@ function build_server_overview(): array
         if ($gameFilter !== null) {
             $infoGame = null;
             $info = $status['info'];
-            if (isset($info['game']) && is_string($info['game'])) {
-                $infoGame = $info['game'];
-            } elseif (isset($info['fs_game']) && is_string($info['fs_game'])) {
-                $infoGame = $info['fs_game'];
-            } elseif ($status['mod'] !== null && $status['mod'] !== '') {
-                $infoGame = $status['mod'];
-            } elseif (isset($info['gamename']) && is_string($info['gamename'])) {
-                $infoGame = $info['gamename'];
-            } elseif (isset($info['gametype_name']) && is_string($info['gametype_name'])) {
-                $infoGame = $info['gametype_name'];
+            $gameCandidates = [
+                $info['game'] ?? null,
+                $info['fs_game'] ?? null,
+                $status['mod'] ?? null,
+                $info['gamename'] ?? null,
+                $info['gametype_name'] ?? null,
+            ];
+
+            foreach ($gameCandidates as $candidate) {
+                if (!is_string($candidate)) {
+                    continue;
+                }
+
+                $candidate = trim($candidate);
+
+                if ($candidate === '') {
+                    continue;
+                }
+
+                $infoGame = $candidate;
+                break;
             }
 
             if ($infoGame === null) {
