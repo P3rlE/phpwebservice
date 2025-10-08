@@ -86,7 +86,7 @@ try {
         if ($view === 'servers') {
         ?>
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -502,8 +502,8 @@ try {
             <a class="nav-link active" aria-current="page" href="<?= htmlspecialchars($serversBase, ENT_QUOTES); ?>" data-i18n="nav.servers">Serverbrowser</a>
           </nav>
           <div class="language-toggle" role="group" aria-label="Sprachauswahl" data-i18n-aria-label="language.toggleLabel">
-            <button class="language-button active" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="<?= htmlspecialchars($flagDe, ENT_QUOTES); ?>" alt=""></button>
-            <button class="language-button" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="<?= htmlspecialchars($flagEn, ENT_QUOTES); ?>" alt=""></button>
+            <button class="language-button active" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="<?= htmlspecialchars($flagEn, ENT_QUOTES); ?>" alt=""></button>
+            <button class="language-button" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="<?= htmlspecialchars($flagDe, ENT_QUOTES); ?>" alt=""></button>
           </div>
         </div>
       </div>
@@ -696,7 +696,7 @@ try {
     };
 
     const state = {
-      language: 'de',
+      language: 'en',
       servers: [],
       search: '',
       mode: 'all',
@@ -1143,7 +1143,7 @@ try {
         }
         ?>
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1977,8 +1977,8 @@ try {
             <a class="nav-link" href="<?= htmlspecialchars($serversBase, ENT_QUOTES); ?>" data-i18n="nav.servers">Serverbrowser</a>
           </nav>
             <div class="language-toggle" role="group" aria-label="Sprachauswahl" data-i18n-aria-label="language.toggleLabel">
-              <button class="language-button active" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="<?= htmlspecialchars($flagDe, ENT_QUOTES); ?>" alt=""></button>
-              <button class="language-button" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="<?= htmlspecialchars($flagEn, ENT_QUOTES); ?>" alt=""></button>
+              <button class="language-button active" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="<?= htmlspecialchars($flagEn, ENT_QUOTES); ?>" alt=""></button>
+              <button class="language-button" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="<?= htmlspecialchars($flagDe, ENT_QUOTES); ?>" alt=""></button>
           </div>
         </div>
         <p class="empty-state" id="leaderboardEmpty" hidden data-i18n="matches.empty">Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.</p>
@@ -2487,7 +2487,7 @@ const state = {
   selectedMaps: new Map(),
   mapMetadata: new Map(),
   activeMode: MODE_CONFIG.length ? MODE_CONFIG[0].key : 'gt_racing',
-  language: 'de',
+  language: 'en',
   modeStatus: { key: null, params: {}, isError: false }
 };
 
@@ -5094,7 +5094,7 @@ function query_master_server_list(string $host, int $port, int $timeout, int $li
     @socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, ['sec' => $timeout, 'usec' => 0]);
     @socket_set_option($socket, SOL_SOCKET, SO_SNDTIMEO, ['sec' => $timeout, 'usec' => 0]);
 
-    $message = "\xFF\xFF\xFF\xFFgetservers 68 empty full";
+    $message = "\xFF\xFF\xFF\xFFgetservers 68 full empty";
     if (is_string($game) && $game !== '') {
         $message .= '\\game\\' . $game;
     }
