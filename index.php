@@ -5082,28 +5082,78 @@ function build_server_overview(): array
 
 
 function query_master_server_list(string $host, int $port, int $timeout, int $limit, ?string $game = null): array
-
 {
     $limit = max(1, min($limit, 512));
+    $messages = build_master_query_messages($game);
+    $aggregate = [];
+    $seen = [];
+
+    foreach ($messages as $message) {
+        if (count($aggregate) >= $limit) {
+            break;
+        }
+
+        $remaining = $limit - count($aggregate);
+        $entries = send_master_query($host, $port, $timeout, $remaining, $message, $seen);
+        if ($entries) {
+            $aggregate = array_merge($aggregate, $entries);
+        }
+    }
+
+    return $aggregate;
+}
+
+function build_master_query_messages(?string $game): array
+{
+    $keywordOrders = [
+        ['empty', 'full'],
+        ['full', 'empty'],
+    ];
+
+    $filters = [''];
+    if (is_string($game)) {
+        $trimmed = trim($game);
+        if ($trimmed !== '') {
+            $variants = array_values(array_unique([
+                $trimmed,
+                strtolower($trimmed),
+                strtoupper($trimmed),
+            ]));
+            foreach ($variants as $variant) {
+                $filters[] = '\\game\\' . $variant;
+                $filters[] = '\\gamename\\' . $variant;
+            }
+        }
+    }
+
+    $messages = [];
+    foreach ($keywordOrders as $keywords) {
+        $keywordString = implode(' ', $keywords);
+        foreach ($filters as $filter) {
+            $messages[] = "\xFF\xFF\xFF\xFFgetservers 68 {$keywordString}" . $filter . "\x00";
+        }
+    }
+
+    return array_values(array_unique($messages));
+}
+
+function send_master_query(string $host, int $port, int $timeout, int $limit, string $message, array &$seen): array
+{
     $socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
     if ($socket === false) {
         return [];
-
     }
 
     @socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, ['sec' => $timeout, 'usec' => 0]);
     @socket_set_option($socket, SOL_SOCKET, SO_SNDTIMEO, ['sec' => $timeout, 'usec' => 0]);
 
-    $message = "\xFF\xFF\xFF\xFFgetservers 68 full empty";
-    if (is_string($game) && $game !== '') {
-        $message .= '\\game\\' . $game;
+    $sent = @socket_sendto($socket, $message, strlen($message), 0, $host, $port);
+    if ($sent === false) {
+        @socket_close($socket);
+        return [];
     }
-    $message .= "\x00";
-    @socket_sendto($socket, $message, strlen($message), 0, $host, $port);
-
 
     $servers = [];
-    $seen = [];
     $complete = false;
 
     while (!$complete && count($servers) < $limit) {
@@ -5118,12 +5168,14 @@ function query_master_server_list(string $host, int $port, int $timeout, int $li
         $parsed = parse_master_server_payload($buffer);
         foreach ($parsed['servers'] as $entry) {
             $key = $entry['address'];
-            if (!isset($seen[$key])) {
-                $seen[$key] = true;
-                $servers[] = $entry;
-                if (count($servers) >= $limit) {
-                    break;
-                }
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $servers[] = $entry;
+            if (count($servers) >= $limit) {
+                break;
             }
         }
 
