@@ -413,6 +413,10 @@ try {
       background: rgba(255, 255, 255, 0.02);
     }
 
+    table.leaderboard-table tbody tr.is-offline {
+      opacity: 0.6;
+    }
+
     table.leaderboard-table tbody tr:last-child td {
       border-bottom: none;
     }
@@ -646,6 +650,7 @@ try {
         'servers.table.players': 'Spieler',
         'servers.table.ping': 'Ping',
         'servers.table.unknown': 'Unbekannter Server',
+        'servers.table.offline': 'Server nicht erreichbar',
         'servers.table.noPlayers': 'Keine Spieler erfasst',
         'servers.table.playersShort': '{current}/{max} Spieler',
         'servers.table.playersOnly': '{current} Spieler',
@@ -686,6 +691,7 @@ try {
         'servers.table.players': 'Players',
         'servers.table.ping': 'Ping',
         'servers.table.unknown': 'Unknown server',
+        'servers.table.offline': 'Server unreachable',
         'servers.table.noPlayers': 'No players recorded',
         'servers.table.playersShort': '{current}/{max} players',
         'servers.table.playersOnly': '{current} players',
@@ -832,6 +838,7 @@ try {
       const modeLabel = typeof raw.modeName === 'string' && raw.modeName.trim() !== '' ? raw.modeName.trim() : null;
       const map = typeof raw.map === 'string' && raw.map.trim() !== '' ? raw.map.trim() : null;
       const mod = typeof raw.mod === 'string' && raw.mod.trim() !== '' ? raw.mod.trim() : null;
+      const reachable = raw.reachable === false ? false : Boolean(raw.reachable ?? true);
       const playerCount = Number.isFinite(raw.playerCount)
         ? raw.playerCount
         : Number.isFinite(raw.numPlayers)
@@ -840,6 +847,7 @@ try {
       const maxPlayers = Number.isFinite(raw.maxPlayers) ? raw.maxPlayers : null;
       const ping = Number.isFinite(raw.ping) ? raw.ping : null;
       const respondedAt = typeof raw.respondedAt === 'string' && raw.respondedAt.trim() !== '' ? raw.respondedAt : null;
+      const info = raw.info && typeof raw.info === 'object' ? raw.info : {};
       const players = Array.isArray(raw.players)
         ? raw.players
             .filter((entry) => typeof entry === 'string' && entry.trim() !== '')
@@ -863,12 +871,14 @@ try {
         modeLabel,
         map,
         mod,
+        reachable,
         playerCount,
         maxPlayers,
         players,
         playerDetails,
         ping,
-        respondedAt
+        respondedAt,
+        info
       };
     }
 
@@ -928,6 +938,9 @@ try {
     }
 
     function formatPlayers(server) {
+      if (!server.reachable) {
+        return t('servers.table.offline');
+      }
       if (server.playerCount == null && server.players.length === 0) {
         return t('servers.table.noPlayers');
       }
@@ -988,6 +1001,9 @@ try {
           })
           .forEach((server) => {
             const row = document.createElement('tr');
+            if (!server.reachable) {
+              row.classList.add('is-offline');
+            }
             const displayName = server.name || t('servers.table.unknown');
             const displayMode = humanizeMode(server.mode, server.modeLabel);
             const players = formatPlayers(server);
@@ -4974,6 +4990,7 @@ function build_server_overview(): array
     }
 
     $servers = [];
+    $reachableCount = 0;
     $gameFilter = $game !== '' ? strtolower($game) : null;
 
     foreach ($addressList as $entry) {
@@ -4981,73 +4998,56 @@ function build_server_overview(): array
             break;
         }
 
-        $status = query_server_status($entry['ip'], $entry['port'], $timeout);
-        if ($status === null) {
-            continue;
-        }
-
-        if ($gameFilter !== null) {
-            $infoGame = null;
-            $info = $status['info'];
-            $gameCandidates = [
-                $info['game'] ?? null,
-                $info['fs_game'] ?? null,
-                $status['mod'] ?? null,
-                $info['gamename'] ?? null,
-                $info['gametype_name'] ?? null,
-            ];
-
-            foreach ($gameCandidates as $candidate) {
-                if (!is_string($candidate)) {
-                    continue;
-                }
-
-                $candidate = trim($candidate);
-
-                if ($candidate === '') {
-                    continue;
-                }
-
-                $infoGame = $candidate;
-                break;
-            }
-
-            if ($infoGame === null) {
-                continue;
-            }
-
-            $infoGame = trim((string) $infoGame);
-
-            if ($infoGame === '' || stripos($infoGame, $gameFilter) === false) {
-                continue;
-            }
-        }
-
-
-        $servers[] = [
-            'name' => $status['hostname'],
-            'rawName' => $status['hostnameRaw'],
+        $server = [
+            'name' => null,
+            'rawName' => null,
             'address' => $entry['address'],
             'ip' => $entry['ip'],
             'port' => $entry['port'],
-            'map' => $status['map'],
-            'mode' => $status['modeKey'],
-            'modeName' => $status['modeName'],
-            'mod' => $status['mod'],
-            'players' => $status['players'],
-            'playerDetails' => $status['playerDetails'],
-            'playerCount' => $status['numPlayers'],
-            'maxPlayers' => $status['maxPlayers'],
-            'ping' => $status['ping'],
-            'respondedAt' => $status['respondedAt'],
-            'info' => $status['info'],
+            'map' => null,
+            'mode' => null,
+            'modeName' => null,
+            'mod' => null,
+            'players' => [],
+            'playerDetails' => [],
+            'playerCount' => null,
+            'maxPlayers' => null,
+            'ping' => null,
+            'respondedAt' => null,
+            'info' => [],
+            'reachable' => false,
         ];
+
+        $status = query_server_status($entry['ip'], $entry['port'], $timeout);
+        if ($status !== null) {
+            if (server_matches_game_filter($status, $gameFilter)) {
+                $server['name'] = $status['hostname'];
+                $server['rawName'] = $status['hostnameRaw'];
+                $server['map'] = $status['map'];
+                $server['mode'] = $status['modeKey'];
+                $server['modeName'] = $status['modeName'];
+                $server['mod'] = $status['mod'];
+                $server['players'] = $status['players'];
+                $server['playerDetails'] = $status['playerDetails'];
+                $server['playerCount'] = $status['numPlayers'];
+                $server['maxPlayers'] = $status['maxPlayers'];
+                $server['ping'] = $status['ping'];
+                $server['respondedAt'] = $status['respondedAt'];
+                $server['info'] = $status['info'];
+                $server['reachable'] = true;
+                $reachableCount++;
+            } else {
+                // Skip entries that do not match the requested game filter.
+                continue;
+            }
+        }
+
+        $servers[] = $server;
     }
 
 
     $totalListed = count($addressList);
-    $reachable = count($servers);
-    $unreachable = max(0, $totalListed - $reachable);
+    $unreachable = max(0, $totalListed - $reachableCount);
 
     $primaryMaster = $masters[0] ?? ['host' => $host, 'port' => $port];
 
@@ -5071,13 +5071,51 @@ function build_server_overview(): array
 
         'summary' => [
             'totalListed' => $totalListed,
-            'reachable' => $reachable,
+            'reachable' => $reachableCount,
             'unreachable' => $unreachable,
         ],
         'limit' => $limit,
         'generatedAt' => gmdate('c'),
         'servers' => array_values($servers),
     ];
+}
+
+
+function server_matches_game_filter(array $status, ?string $gameFilter): bool
+{
+    if ($gameFilter === null || $gameFilter === '') {
+        return true;
+    }
+
+    $info = [];
+    if (isset($status['info']) && is_array($status['info'])) {
+        $info = $status['info'];
+    }
+
+    $candidates = [
+        $info['game'] ?? null,
+        $info['fs_game'] ?? null,
+        $status['mod'] ?? null,
+        $info['gamename'] ?? null,
+        $info['gametype_name'] ?? null,
+    ];
+
+    foreach ($candidates as $candidate) {
+        if (!is_string($candidate)) {
+            continue;
+        }
+
+        $normalized = strtolower(trim($candidate));
+        if ($normalized === '') {
+            continue;
+        }
+
+        if (strpos($normalized, $gameFilter) !== false) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
