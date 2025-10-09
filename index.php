@@ -86,7 +86,7 @@ try {
         if ($view === 'servers') {
         ?>
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -413,6 +413,10 @@ try {
       background: rgba(255, 255, 255, 0.02);
     }
 
+    table.leaderboard-table tbody tr.is-offline {
+      opacity: 0.6;
+    }
+
     table.leaderboard-table tbody tr:last-child td {
       border-bottom: none;
     }
@@ -502,8 +506,8 @@ try {
             <a class="nav-link active" aria-current="page" href="<?= htmlspecialchars($serversBase, ENT_QUOTES); ?>" data-i18n="nav.servers">Serverbrowser</a>
           </nav>
           <div class="language-toggle" role="group" aria-label="Sprachauswahl" data-i18n-aria-label="language.toggleLabel">
-            <button class="language-button active" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="<?= htmlspecialchars($flagDe, ENT_QUOTES); ?>" alt=""></button>
-            <button class="language-button" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="<?= htmlspecialchars($flagEn, ENT_QUOTES); ?>" alt=""></button>
+            <button class="language-button active" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="<?= htmlspecialchars($flagEn, ENT_QUOTES); ?>" alt=""></button>
+            <button class="language-button" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="<?= htmlspecialchars($flagDe, ENT_QUOTES); ?>" alt=""></button>
           </div>
         </div>
       </div>
@@ -646,6 +650,7 @@ try {
         'servers.table.players': 'Spieler',
         'servers.table.ping': 'Ping',
         'servers.table.unknown': 'Unbekannter Server',
+        'servers.table.offline': 'Server nicht erreichbar',
         'servers.table.noPlayers': 'Keine Spieler erfasst',
         'servers.table.playersShort': '{current}/{max} Spieler',
         'servers.table.playersOnly': '{current} Spieler',
@@ -686,6 +691,7 @@ try {
         'servers.table.players': 'Players',
         'servers.table.ping': 'Ping',
         'servers.table.unknown': 'Unknown server',
+        'servers.table.offline': 'Server unreachable',
         'servers.table.noPlayers': 'No players recorded',
         'servers.table.playersShort': '{current}/{max} players',
         'servers.table.playersOnly': '{current} players',
@@ -696,7 +702,7 @@ try {
     };
 
     const state = {
-      language: 'de',
+      language: 'en',
       servers: [],
       search: '',
       mode: 'all',
@@ -832,6 +838,7 @@ try {
       const modeLabel = typeof raw.modeName === 'string' && raw.modeName.trim() !== '' ? raw.modeName.trim() : null;
       const map = typeof raw.map === 'string' && raw.map.trim() !== '' ? raw.map.trim() : null;
       const mod = typeof raw.mod === 'string' && raw.mod.trim() !== '' ? raw.mod.trim() : null;
+      const reachable = raw.reachable === false ? false : Boolean(raw.reachable ?? true);
       const playerCount = Number.isFinite(raw.playerCount)
         ? raw.playerCount
         : Number.isFinite(raw.numPlayers)
@@ -840,6 +847,7 @@ try {
       const maxPlayers = Number.isFinite(raw.maxPlayers) ? raw.maxPlayers : null;
       const ping = Number.isFinite(raw.ping) ? raw.ping : null;
       const respondedAt = typeof raw.respondedAt === 'string' && raw.respondedAt.trim() !== '' ? raw.respondedAt : null;
+      const info = raw.info && typeof raw.info === 'object' ? raw.info : {};
       const players = Array.isArray(raw.players)
         ? raw.players
             .filter((entry) => typeof entry === 'string' && entry.trim() !== '')
@@ -863,12 +871,14 @@ try {
         modeLabel,
         map,
         mod,
+        reachable,
         playerCount,
         maxPlayers,
         players,
         playerDetails,
         ping,
-        respondedAt
+        respondedAt,
+        info
       };
     }
 
@@ -928,6 +938,9 @@ try {
     }
 
     function formatPlayers(server) {
+      if (!server.reachable) {
+        return t('servers.table.offline');
+      }
       if (server.playerCount == null && server.players.length === 0) {
         return t('servers.table.noPlayers');
       }
@@ -988,6 +1001,9 @@ try {
           })
           .forEach((server) => {
             const row = document.createElement('tr');
+            if (!server.reachable) {
+              row.classList.add('is-offline');
+            }
             const displayName = server.name || t('servers.table.unknown');
             const displayMode = humanizeMode(server.mode, server.modeLabel);
             const players = formatPlayers(server);
@@ -1143,7 +1159,7 @@ try {
         }
         ?>
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1977,8 +1993,8 @@ try {
             <a class="nav-link" href="<?= htmlspecialchars($serversBase, ENT_QUOTES); ?>" data-i18n="nav.servers">Serverbrowser</a>
           </nav>
             <div class="language-toggle" role="group" aria-label="Sprachauswahl" data-i18n-aria-label="language.toggleLabel">
-              <button class="language-button active" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="<?= htmlspecialchars($flagDe, ENT_QUOTES); ?>" alt=""></button>
-              <button class="language-button" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="<?= htmlspecialchars($flagEn, ENT_QUOTES); ?>" alt=""></button>
+              <button class="language-button active" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="<?= htmlspecialchars($flagEn, ENT_QUOTES); ?>" alt=""></button>
+              <button class="language-button" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="<?= htmlspecialchars($flagDe, ENT_QUOTES); ?>" alt=""></button>
           </div>
         </div>
         <p class="empty-state" id="leaderboardEmpty" hidden data-i18n="matches.empty">Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.</p>
@@ -2487,7 +2503,7 @@ const state = {
   selectedMaps: new Map(),
   mapMetadata: new Map(),
   activeMode: MODE_CONFIG.length ? MODE_CONFIG[0].key : 'gt_racing',
-  language: 'de',
+  language: 'en',
   modeStatus: { key: null, params: {}, isError: false }
 };
 
@@ -4974,6 +4990,7 @@ function build_server_overview(): array
     }
 
     $servers = [];
+    $reachableCount = 0;
     $gameFilter = $game !== '' ? strtolower($game) : null;
 
     foreach ($addressList as $entry) {
@@ -4981,73 +4998,56 @@ function build_server_overview(): array
             break;
         }
 
-        $status = query_server_status($entry['ip'], $entry['port'], $timeout);
-        if ($status === null) {
-            continue;
-        }
-
-        if ($gameFilter !== null) {
-            $infoGame = null;
-            $info = $status['info'];
-            $gameCandidates = [
-                $info['game'] ?? null,
-                $info['fs_game'] ?? null,
-                $status['mod'] ?? null,
-                $info['gamename'] ?? null,
-                $info['gametype_name'] ?? null,
-            ];
-
-            foreach ($gameCandidates as $candidate) {
-                if (!is_string($candidate)) {
-                    continue;
-                }
-
-                $candidate = trim($candidate);
-
-                if ($candidate === '') {
-                    continue;
-                }
-
-                $infoGame = $candidate;
-                break;
-            }
-
-            if ($infoGame === null) {
-                continue;
-            }
-
-            $infoGame = trim((string) $infoGame);
-
-            if ($infoGame === '' || stripos($infoGame, $gameFilter) === false) {
-                continue;
-            }
-        }
-
-
-        $servers[] = [
-            'name' => $status['hostname'],
-            'rawName' => $status['hostnameRaw'],
+        $server = [
+            'name' => null,
+            'rawName' => null,
             'address' => $entry['address'],
             'ip' => $entry['ip'],
             'port' => $entry['port'],
-            'map' => $status['map'],
-            'mode' => $status['modeKey'],
-            'modeName' => $status['modeName'],
-            'mod' => $status['mod'],
-            'players' => $status['players'],
-            'playerDetails' => $status['playerDetails'],
-            'playerCount' => $status['numPlayers'],
-            'maxPlayers' => $status['maxPlayers'],
-            'ping' => $status['ping'],
-            'respondedAt' => $status['respondedAt'],
-            'info' => $status['info'],
+            'map' => null,
+            'mode' => null,
+            'modeName' => null,
+            'mod' => null,
+            'players' => [],
+            'playerDetails' => [],
+            'playerCount' => null,
+            'maxPlayers' => null,
+            'ping' => null,
+            'respondedAt' => null,
+            'info' => [],
+            'reachable' => false,
         ];
+
+        $status = query_server_status($entry['ip'], $entry['port'], $timeout);
+        if ($status !== null) {
+            if (server_matches_game_filter($status, $gameFilter)) {
+                $server['name'] = $status['hostname'];
+                $server['rawName'] = $status['hostnameRaw'];
+                $server['map'] = $status['map'];
+                $server['mode'] = $status['modeKey'];
+                $server['modeName'] = $status['modeName'];
+                $server['mod'] = $status['mod'];
+                $server['players'] = $status['players'];
+                $server['playerDetails'] = $status['playerDetails'];
+                $server['playerCount'] = $status['numPlayers'];
+                $server['maxPlayers'] = $status['maxPlayers'];
+                $server['ping'] = $status['ping'];
+                $server['respondedAt'] = $status['respondedAt'];
+                $server['info'] = $status['info'];
+                $server['reachable'] = true;
+                $reachableCount++;
+            } else {
+                // Skip entries that do not match the requested game filter.
+                continue;
+            }
+        }
+
+        $servers[] = $server;
     }
 
 
     $totalListed = count($addressList);
-    $reachable = count($servers);
-    $unreachable = max(0, $totalListed - $reachable);
+    $unreachable = max(0, $totalListed - $reachableCount);
 
     $primaryMaster = $masters[0] ?? ['host' => $host, 'port' => $port];
 
@@ -5071,7 +5071,7 @@ function build_server_overview(): array
 
         'summary' => [
             'totalListed' => $totalListed,
-            'reachable' => $reachable,
+            'reachable' => $reachableCount,
             'unreachable' => $unreachable,
         ],
         'limit' => $limit,
@@ -5081,29 +5081,117 @@ function build_server_overview(): array
 }
 
 
-function query_master_server_list(string $host, int $port, int $timeout, int $limit, ?string $game = null): array
+function server_matches_game_filter(array $status, ?string $gameFilter): bool
+{
+    if ($gameFilter === null || $gameFilter === '') {
+        return true;
+    }
 
+    $info = [];
+    if (isset($status['info']) && is_array($status['info'])) {
+        $info = $status['info'];
+    }
+
+    $candidates = [
+        $info['game'] ?? null,
+        $info['fs_game'] ?? null,
+        $status['mod'] ?? null,
+        $info['gamename'] ?? null,
+        $info['gametype_name'] ?? null,
+    ];
+
+    foreach ($candidates as $candidate) {
+        if (!is_string($candidate)) {
+            continue;
+        }
+
+        $normalized = strtolower(trim($candidate));
+        if ($normalized === '') {
+            continue;
+        }
+
+        if (strpos($normalized, $gameFilter) !== false) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+function query_master_server_list(string $host, int $port, int $timeout, int $limit, ?string $game = null): array
 {
     $limit = max(1, min($limit, 512));
+    $messages = build_master_query_messages($game);
+    $aggregate = [];
+    $seen = [];
+
+    foreach ($messages as $message) {
+        if (count($aggregate) >= $limit) {
+            break;
+        }
+
+        $remaining = $limit - count($aggregate);
+        $entries = send_master_query($host, $port, $timeout, $remaining, $message, $seen);
+        if ($entries) {
+            $aggregate = array_merge($aggregate, $entries);
+        }
+    }
+
+    return $aggregate;
+}
+
+function build_master_query_messages(?string $game): array
+{
+    $keywordOrders = [
+        ['empty', 'full'],
+        ['full', 'empty'],
+    ];
+
+    $filters = [''];
+    if (is_string($game)) {
+        $trimmed = trim($game);
+        if ($trimmed !== '') {
+            $variants = array_values(array_unique([
+                $trimmed,
+                strtolower($trimmed),
+                strtoupper($trimmed),
+            ]));
+            foreach ($variants as $variant) {
+                $filters[] = '\\game\\' . $variant;
+                $filters[] = '\\gamename\\' . $variant;
+            }
+        }
+    }
+
+    $messages = [];
+    foreach ($keywordOrders as $keywords) {
+        $keywordString = implode(' ', $keywords);
+        foreach ($filters as $filter) {
+            $messages[] = "\xFF\xFF\xFF\xFFgetservers 68 {$keywordString}" . $filter . "\x00";
+        }
+    }
+
+    return array_values(array_unique($messages));
+}
+
+function send_master_query(string $host, int $port, int $timeout, int $limit, string $message, array &$seen): array
+{
     $socket = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
     if ($socket === false) {
         return [];
-
     }
 
     @socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, ['sec' => $timeout, 'usec' => 0]);
     @socket_set_option($socket, SOL_SOCKET, SO_SNDTIMEO, ['sec' => $timeout, 'usec' => 0]);
 
-    $message = "\xFF\xFF\xFF\xFFgetservers 68 empty full";
-    if (is_string($game) && $game !== '') {
-        $message .= '\\game\\' . $game;
+    $sent = @socket_sendto($socket, $message, strlen($message), 0, $host, $port);
+    if ($sent === false) {
+        @socket_close($socket);
+        return [];
     }
-    $message .= "\x00";
-    @socket_sendto($socket, $message, strlen($message), 0, $host, $port);
-
 
     $servers = [];
-    $seen = [];
     $complete = false;
 
     while (!$complete && count($servers) < $limit) {
@@ -5118,12 +5206,14 @@ function query_master_server_list(string $host, int $port, int $timeout, int $li
         $parsed = parse_master_server_payload($buffer);
         foreach ($parsed['servers'] as $entry) {
             $key = $entry['address'];
-            if (!isset($seen[$key])) {
-                $seen[$key] = true;
-                $servers[] = $entry;
-                if (count($servers) >= $limit) {
-                    break;
-                }
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $servers[] = $entry;
+            if (count($servers) >= $limit) {
+                break;
             }
         }
 
