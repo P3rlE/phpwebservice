@@ -15,6 +15,8 @@ Dieses Verzeichnis enthält einen kleinen PHP-Dienst, der Q3Rally-Matches entgeg
 * **GET `/matches`** – Liefert eine Liste aller gespeicherten Matches (neueste zuerst). Optional können `mode`, `limit` und `offset` als Query-Parameter gesetzt werden.
 * **GET `/matches/{matchId}`** – Gibt das vollständige JSON zu einer Match-ID zurück.
 * **DELETE `/matches/{matchId}`** – Löscht ein Match dauerhaft.
+* **GET `/version`** – Liefert die aktuelle Spielversion für den im Client integrierten Update-Check.
+* **POST `/version`** – Aktualisiert Version, Download-Link und Nachricht für den Update-Check. Erfordert ein Passwort.
 
 ### Beispiel-Aufrufe
 ```bash
@@ -35,6 +37,42 @@ curl -X DELETE https://example.com/ladder/index.php/matches/srv-20240405-183011-
 
 ## Datenablage
 Jedes Match wird als einzelne JSON-Datei unter `data/<matchId>.json` abgelegt. So lässt sich der Ordner bei Bedarf sichern oder in andere Systeme importieren. Der Service fügt automatisch einen Zeitstempel `receivedAt` hinzu, um Listen sortieren zu können.
+
+## Versionsverwaltung für den Update-Check
+
+Der Q3Rally-Client fragt beim Start `https://ladder.q3rally.com/api/v1/version` ab, um neue Versionen zu erkennen. Das Ladder-Backend liefert dafür die passende Antwort über den Endpunkt `/version`.
+
+### Passwort konfigurieren
+
+Für Schreibzugriffe muss ein Passwort gesetzt werden. Dies geschieht über eine Umgebungsvariable oder Server-Konfiguration:
+
+* `LADDER_VERSION_PASSWORD`
+* alternativ `VERSION_PASSWORD`
+
+Ist kein Passwort gesetzt, beantwortet der Dienst Schreibversuche mit HTTP 403.
+
+### Version auslesen
+
+```bash
+curl https://example.com/ladder/index.php/version
+```
+
+Die Antwort erfolgt standardmäßig als JSON und enthält mindestens das Feld `latest` (bzw. `version`). Auf Wunsch liefert der Server auch Plaintext, wenn ausschließlich `text/plain` im `Accept`-Header steht.
+
+### Version setzen
+
+```bash
+curl -X POST https://example.com/ladder/index.php/version \
+     -H "Content-Type: application/json" \
+     -d '{
+           "password": "supersecret",
+           "version": "v0.7",
+           "downloadUrl": "https://downloads.example.com/q3rally-v0.7.zip",
+           "message": "Bugfix-Release mit verbesserten Streckenzeiten."
+         }'
+```
+
+Erfolgreiche Anfragen werden mit der gespeicherten Version beantwortet. Felder wie `downloadUrl` oder `message` sind optional und lassen sich später erneut überschreiben oder durch leere Werte entfernen.
 
 ## Web-Frontend
 Die Startseite von `index.php` liefert ein Dashboard, das die gespeicherten Matches aus dem `data/`-Ordner lädt und verschiedene Ranglisten generiert:
