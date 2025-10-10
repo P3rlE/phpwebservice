@@ -44,10 +44,22 @@ Der Q3Rally-Client fragt beim Start `https://ladder.q3rally.com/api/v1/version` 
 
 ### Passwort konfigurieren
 
-Für Schreibzugriffe muss ein Passwort gesetzt werden. Dies geschieht über eine Umgebungsvariable oder Server-Konfiguration:
+Für Schreibzugriffe muss ein Passwort gesetzt werden. Dies geschieht bevorzugt über eine Umgebungsvariable oder Server-Konfiguration:
 
 * `LADDER_VERSION_PASSWORD`
 * alternativ `VERSION_PASSWORD`
+
+Auf Shared-Hosting-Umgebungen lässt sich das beispielsweise über `.htaccess` erledigen:
+
+```apacheconf
+SetEnv LADDER_VERSION_PASSWORD "?Vc09061981!"
+```
+
+Alternativ kann ein Pfad zu einer Passwortdatei hinterlegt werden (`LADDER_VERSION_PASSWORD_FILE` bzw. `VERSION_PASSWORD_FILE`). Der Dienst erwartet darin den Klartext (ohne Zeilenumbrüche am Ende). Ohne weitere Konfiguration wird automatisch die Datei `version.password` im Projektordner gelesen – sie kann mit einem beliebigen Editor erstellt werden:
+
+```bash
+echo -n '?Vc09061981!' > /pfad/zur/ladder/version.password
+```
 
 Ist kein Passwort gesetzt, beantwortet der Dienst Schreibversuche mit HTTP 403.
 

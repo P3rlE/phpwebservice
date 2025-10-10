@@ -7,6 +7,7 @@ declare(strict_types=1);
 const DATA_DIR = __DIR__ . '/data';
 const ARENA_DIR = __DIR__ . '/arena';
 const VERSION_FILE = __DIR__ . '/version.json';
+const VERSION_PASSWORD_FALLBACK_FILE = __DIR__ . '/version.password';
 if (!is_dir(DATA_DIR)) {
     if (!mkdir(DATA_DIR, 0775, true) && !is_dir(DATA_DIR)) {
         send_error(500, 'Failed to create data directory.');
@@ -3982,7 +3983,51 @@ function resolve_version_password(): ?string
         }
     }
 
-    return null;
+    $fileKeys = ['LADDER_VERSION_PASSWORD_FILE', 'VERSION_PASSWORD_FILE'];
+    foreach ($fileKeys as $fileKey) {
+        $path = getenv($fileKey);
+        if ($path === false || !is_string($path) || $path === '') {
+            if (isset($_SERVER[$fileKey]) && is_string($_SERVER[$fileKey]) && $_SERVER[$fileKey] !== '') {
+                $path = $_SERVER[$fileKey];
+            } elseif (isset($_ENV[$fileKey]) && is_string($_ENV[$fileKey]) && $_ENV[$fileKey] !== '') {
+                $path = $_ENV[$fileKey];
+            } else {
+                $path = null;
+            }
+        }
+
+        if ($path !== null) {
+            $password = read_password_file($path);
+            if ($password !== null) {
+                return $password;
+            }
+        }
+    }
+
+    return read_password_file(VERSION_PASSWORD_FALLBACK_FILE);
+}
+
+function read_password_file(string $path): ?string
+{
+    if ($path === '') {
+        return null;
+    }
+
+    if (!is_file($path)) {
+        return null;
+    }
+
+    $contents = file_get_contents($path);
+    if ($contents === false) {
+        return null;
+    }
+
+    $trimmed = trim($contents);
+    if ($trimmed === '') {
+        return null;
+    }
+
+    return $trimmed;
 }
 
 function normalize_version_string(string $value): string
