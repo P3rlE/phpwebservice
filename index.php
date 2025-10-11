@@ -3620,6 +3620,22 @@ loadMatches();
 
 
 $pathInfo = $_SERVER['PATH_INFO'] ?? '';
+if ($pathInfo === '' && isset($_SERVER['REQUEST_URI'])) {
+    $requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '';
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+
+    if ($scriptName !== '' && strpos($requestPath, $scriptName) === 0) {
+        $pathInfo = substr($requestPath, strlen($scriptName));
+    } else {
+        $scriptDir = $scriptName !== '' ? rtrim(dirname($scriptName), '/\\') : '';
+        if ($scriptDir !== '' && strpos($requestPath, $scriptDir) === 0) {
+            $pathInfo = substr($requestPath, strlen($scriptDir));
+        } else {
+            $pathInfo = $requestPath;
+        }
+    }
+}
+
 $path = trim($pathInfo, '/');
 $segments = $path === '' ? [] : explode('/', $path);
 
