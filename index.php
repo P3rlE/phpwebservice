@@ -3620,31 +3620,9 @@ loadMatches();
 // --- End frontend ---
 
 
-<<<<<<< HEAD
     $pathInfo = $normalized;
     $path = trim($pathInfo, '/');
     $segments = $path === '' ? [] : explode('/', $path);
-=======
-$pathInfo = $_SERVER['PATH_INFO'] ?? '';
-if ($pathInfo === '' && isset($_SERVER['REQUEST_URI'])) {
-    $requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '';
-    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-
-    if ($scriptName !== '' && strpos($requestPath, $scriptName) === 0) {
-        $pathInfo = substr($requestPath, strlen($scriptName));
-    } else {
-        $scriptDir = $scriptName !== '' ? rtrim(dirname($scriptName), '/\\') : '';
-        if ($scriptDir !== '' && strpos($requestPath, $scriptDir) === 0) {
-            $pathInfo = substr($requestPath, strlen($scriptDir));
-        } else {
-            $pathInfo = $requestPath;
-        }
-    }
-}
-
-$path = trim($pathInfo, '/');
-$segments = $path === '' ? [] : explode('/', $path);
->>>>>>> 8fbe6eb9a9fb916a56751d6ecc65e288f150d2f3
 
     switch ($method) {
         case 'POST':
