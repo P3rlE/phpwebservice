@@ -6,8 +6,6 @@ declare(strict_types=1);
 
 const DATA_DIR = __DIR__ . '/data';
 const ARENA_DIR = __DIR__ . '/arena';
-const VERSION_FILE = __DIR__ . '/version.json';
-const VERSION_PASSWORD_FALLBACK_FILE = __DIR__ . '/version.password';
 if (!is_dir(DATA_DIR)) {
     if (!mkdir(DATA_DIR, 0775, true) && !is_dir(DATA_DIR)) {
         send_error(500, 'Failed to create data directory.');
@@ -206,39 +204,6 @@ try {
     .language-button.active {
       box-shadow: inset 0 0 0 2px rgba(93, 139, 255, 0.55);
       background: rgba(93, 139, 255, 0.18);
-    }
-
-    .main-nav {
-      display: inline-flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 6px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .nav-link {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-size: 0.78rem;
-      padding: 8px 16px;
-      border-radius: 12px;
-      transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
-    }
-
-    .nav-link:hover {
-      color: var(--text);
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .nav-link.active {
-      color: var(--text);
-      background: var(--accent-soft);
-      box-shadow: inset 0 0 0 1px rgba(93, 139, 255, 0.45);
     }
 
     .hero-stats {
@@ -871,15 +836,12 @@ try {
             <p data-i18n-html="hero.description">Direkte Vorschau der besten Platzierungen je Spielmodus und Map. Wähle oben einen Modus und vergleiche die Top 10 pro Strecke – inklusive Levelshot-Vorschau.</p>
           </div>
         </div>
-        <div class="hero-actions">
-          <nav class="main-nav" aria-label="Bereiche" data-i18n-aria-label="nav.label">
-            <a class="nav-link active" aria-current="page" href="<?= htmlspecialchars($apiBase, ENT_QUOTES); ?>" data-i18n="nav.matches">Matches</a>
-          </nav>
+          <div class="hero-actions">
             <div class="language-toggle" role="group" aria-label="Sprachauswahl" data-i18n-aria-label="language.toggleLabel">
               <button class="language-button active" type="button" data-lang="en" aria-label="Englisch" data-i18n-aria-label="language.enLabel" title="Englisch" data-i18n-title="language.enLabel"><img src="<?= htmlspecialchars($flagEn, ENT_QUOTES); ?>" alt=""></button>
               <button class="language-button" type="button" data-lang="de" aria-label="Deutsch" data-i18n-aria-label="language.deLabel" title="Deutsch" data-i18n-title="language.deLabel"><img src="<?= htmlspecialchars($flagDe, ENT_QUOTES); ?>" alt=""></button>
+            </div>
           </div>
-        </div>
         <p class="empty-state" id="leaderboardEmpty" hidden data-i18n="matches.empty">Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.</p>
       </div>
 
@@ -937,8 +899,6 @@ try {
         'language.toggleLabel': 'Sprachauswahl',
         'language.deLabel': 'Deutsch',
         'language.enLabel': 'Englisch',
-        'nav.label': 'Bereiche',
-        'nav.matches': 'Matches',
         'tabs.label': 'Spielmodi',
         'tabs.racing': 'RACING LEADERBOARD',
         'tabs.deathmatch': 'DEATHMATCH LEADERBOARD',
@@ -1066,7 +1026,6 @@ try {
         'matches.summary.durationLabel': 'Dauer',
         'matches.summary.playersTitle': 'Spielerzahl',
         'matches.meta.server': 'Server',
-        'matches.meta.version': 'Version',
         'matches.meta.recorded': 'Aufgenommen',
         'matches.meta.size': 'Dateigröße',
         'matches.players.heading': 'Spieler ({count})',
@@ -1097,8 +1056,6 @@ try {
         'language.toggleLabel': 'Language selection',
         'language.deLabel': 'German',
         'language.enLabel': 'English',
-        'nav.label': 'Sections',
-        'nav.matches': 'Matches',
         'tabs.label': 'Game modes',
         'tabs.racing': 'RACING LEADERBOARD',
         'tabs.deathmatch': 'DEATHMATCH LEADERBOARD',
@@ -1226,7 +1183,6 @@ try {
         'matches.summary.durationLabel': 'Duration',
         'matches.summary.playersTitle': 'Player count',
         'matches.meta.server': 'Server',
-        'matches.meta.version': 'Version',
         'matches.meta.recorded': 'Recorded',
         'matches.meta.size': 'File size',
         'matches.players.heading': 'Players ({count})',
@@ -3687,80 +3643,11 @@ function handle_post(array $segments): void
         return;
     }
 
-    if ($segments === ['version']) {
-        handle_post_version();
-        return;
-    }
-
     send_error(404, 'Endpoint not found.');
-}
-
-function handle_post_version(): void
-{
-    $payload = json_decode(file_get_contents('php://input'), true);
-    if (!is_array($payload)) {
-        throw new RuntimeException('Invalid JSON payload.');
-    }
-
-    $password = $payload['password'] ?? null;
-    if (!is_string($password) || trim($password) === '') {
-        throw new RuntimeException('password is required.');
-    }
-
-    $expected = resolve_version_password();
-    if ($expected === null || $expected === '') {
-        send_error(403, 'Version updates are disabled.');
-    }
-
-    if (!hash_equals($expected, $password)) {
-        send_error(403, 'Forbidden.');
-    }
-
-    $versionInput = $payload['version'] ?? $payload['latest'] ?? $payload['latestVersion'] ?? null;
-    if (!is_string($versionInput) || trim($versionInput) === '') {
-        throw new RuntimeException('version is required.');
-    }
-
-    $version = normalize_version_string($versionInput);
-
-    $downloadUrl = null;
-    if (array_key_exists('downloadUrl', $payload)) {
-        $downloadUrl = normalize_optional_url($payload['downloadUrl']);
-    } elseif (array_key_exists('url', $payload)) {
-        $downloadUrl = normalize_optional_url($payload['url']);
-    }
-
-    $message = null;
-    if (array_key_exists('message', $payload)) {
-        $message = normalize_optional_message($payload['message']);
-    } elseif (array_key_exists('notes', $payload)) {
-        $message = normalize_optional_message($payload['notes']);
-    }
-
-    $record = [
-        'version' => $version,
-        'downloadUrl' => $downloadUrl,
-        'message' => $message,
-        'updatedAt' => gmdate('c'),
-    ];
-
-    persist_version_record($record);
-
-    send_version_payload($record);
 }
 
 function handle_get(array $segments): void
 {
-    if ($segments === ['version']) {
-        $record = load_version_record();
-        if ($record === null) {
-            send_error(404, 'Version not configured.');
-        }
-
-        send_version_payload($record);
-        return;
-    }
-
     if ($segments === ['maps', 'metadata']) {
         $entries = load_arena_metadata();
         $normalized = [];
@@ -3854,240 +3741,6 @@ function handle_delete(array $segments): void
     }
 
     http_response_code(204);
-}
-
-function send_version_payload(array $record): void
-{
-    $response = [
-        'latest' => $record['version'],
-        'latestVersion' => $record['version'],
-        'version' => $record['version'],
-    ];
-
-    if (isset($record['downloadUrl']) && $record['downloadUrl'] !== null) {
-        $response['downloadUrl'] = $record['downloadUrl'];
-        $response['url'] = $record['downloadUrl'];
-    }
-
-    if (isset($record['message']) && $record['message'] !== null) {
-        $response['message'] = $record['message'];
-        $response['notes'] = $record['message'];
-    }
-
-    if (isset($record['updatedAt']) && is_string($record['updatedAt'])) {
-        $response['updatedAt'] = $record['updatedAt'];
-    }
-
-    $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
-    $wantsPlain = $accept !== ''
-        && strpos($accept, 'text/plain') !== false
-        && strpos($accept, 'application/json') === false;
-
-    if ($wantsPlain) {
-        header('Content-Type: text/plain; charset=UTF-8');
-
-        $lines = [$record['version']];
-        if (!empty($record['downloadUrl'])) {
-            $lines[] = $record['downloadUrl'];
-        }
-        if (!empty($record['message'])) {
-            $message = preg_replace('/\s+/', ' ', str_replace(["\r\n", "\r"], ' ', (string) $record['message']));
-            if ($message !== null && $message !== '') {
-                $lines[] = $message;
-            }
-        }
-
-        echo implode("\n", $lines);
-        exit;
-    }
-
-    send_json($response, 200);
-}
-
-function load_version_record(): ?array
-{
-    if (!is_file(VERSION_FILE)) {
-        return null;
-    }
-
-    $json = file_get_contents(VERSION_FILE);
-    if ($json === false) {
-        return null;
-    }
-
-    $payload = json_decode($json, true);
-    if (!is_array($payload)) {
-        return null;
-    }
-
-    $versionField = $payload['version'] ?? $payload['latest'] ?? $payload['latestVersion'] ?? null;
-    if (!is_string($versionField) || trim($versionField) === '') {
-        return null;
-    }
-
-    try {
-        $version = normalize_version_string($versionField);
-    } catch (RuntimeException $e) {
-        return null;
-    }
-
-    $record = [
-        'version' => $version,
-        'downloadUrl' => null,
-        'message' => null,
-    ];
-
-    $urlField = $payload['downloadUrl'] ?? $payload['url'] ?? null;
-    if ($urlField !== null) {
-        try {
-            $record['downloadUrl'] = normalize_optional_url($urlField);
-        } catch (RuntimeException $e) {
-            $record['downloadUrl'] = null;
-        }
-    }
-
-    $messageField = $payload['message'] ?? $payload['notes'] ?? null;
-    if ($messageField !== null) {
-        try {
-            $record['message'] = normalize_optional_message($messageField);
-        } catch (RuntimeException $e) {
-            $record['message'] = null;
-        }
-    }
-
-    if (isset($payload['updatedAt']) && is_string($payload['updatedAt'])) {
-        $record['updatedAt'] = $payload['updatedAt'];
-    }
-
-    return $record;
-}
-
-function persist_version_record(array $record): void
-{
-    $json = json_encode($record, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    if ($json === false) {
-        throw new RuntimeException('Failed to encode version payload.');
-    }
-
-    if (file_put_contents(VERSION_FILE, $json . "\n", LOCK_EX) === false) {
-        throw new RuntimeException('Unable to persist version payload.');
-    }
-}
-
-function resolve_version_password(): ?string
-{
-    $keys = ['LADDER_VERSION_PASSWORD', 'VERSION_PASSWORD'];
-
-    foreach ($keys as $key) {
-        if (isset($_SERVER[$key]) && is_string($_SERVER[$key]) && $_SERVER[$key] !== '') {
-            return $_SERVER[$key];
-        }
-        if (isset($_ENV[$key]) && is_string($_ENV[$key]) && $_ENV[$key] !== '') {
-            return $_ENV[$key];
-        }
-        $env = getenv($key);
-        if (is_string($env) && $env !== '') {
-            return $env;
-        }
-    }
-
-    $fileKeys = ['LADDER_VERSION_PASSWORD_FILE', 'VERSION_PASSWORD_FILE'];
-    foreach ($fileKeys as $fileKey) {
-        $path = getenv($fileKey);
-        if ($path === false || !is_string($path) || $path === '') {
-            if (isset($_SERVER[$fileKey]) && is_string($_SERVER[$fileKey]) && $_SERVER[$fileKey] !== '') {
-                $path = $_SERVER[$fileKey];
-            } elseif (isset($_ENV[$fileKey]) && is_string($_ENV[$fileKey]) && $_ENV[$fileKey] !== '') {
-                $path = $_ENV[$fileKey];
-            } else {
-                $path = null;
-            }
-        }
-
-        if ($path !== null) {
-            $password = read_password_file($path);
-            if ($password !== null) {
-                return $password;
-            }
-        }
-    }
-
-    return read_password_file(VERSION_PASSWORD_FALLBACK_FILE);
-}
-
-function read_password_file(string $path): ?string
-{
-    if ($path === '') {
-        return null;
-    }
-
-    if (!is_file($path)) {
-        return null;
-    }
-
-    $contents = file_get_contents($path);
-    if ($contents === false) {
-        return null;
-    }
-
-    $trimmed = trim($contents);
-    if ($trimmed === '') {
-        return null;
-    }
-
-    return $trimmed;
-}
-
-function normalize_version_string(string $value): string
-{
-    $normalized = trim($value);
-    if ($normalized === '') {
-        throw new RuntimeException('version must not be empty.');
-    }
-
-    return $normalized;
-}
-
-function normalize_optional_url($value): ?string
-{
-    if ($value === null || $value === '') {
-        return null;
-    }
-
-    if (!is_string($value)) {
-        throw new RuntimeException('downloadUrl must be a string.');
-    }
-
-    $trimmed = trim($value);
-    if ($trimmed === '') {
-        return null;
-    }
-
-    if (filter_var($trimmed, FILTER_VALIDATE_URL) === false) {
-        throw new RuntimeException('downloadUrl must be a valid URL.');
-    }
-
-    return $trimmed;
-}
-
-function normalize_optional_message($value): ?string
-{
-    if ($value === null || $value === '') {
-        return null;
-    }
-
-    if (!is_string($value)) {
-        throw new RuntimeException('message must be a string.');
-    }
-
-    $trimmed = trim($value);
-    if ($trimmed === '') {
-        return null;
-    }
-
-    $normalized = str_replace(["\r\n", "\r"], "\n", $trimmed);
-
-    return $normalized;
 }
 
 function load_arena_metadata(): array
