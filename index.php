@@ -265,6 +265,114 @@ try {
       display: flex;
     }
 
+    .server-browser {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .server-browser-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .server-browser-headline {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .server-browser-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .server-browser-stats {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .server-browser-stats div {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .server-browser-stats dt {
+      margin: 0;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+    }
+
+    .server-browser-stats dd {
+      margin: 0;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .server-browser-stats dd.error {
+      color: #ffb7b7;
+    }
+
+    .server-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 100%;
+    }
+
+    .server-table thead {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .server-table th,
+    .server-table td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      vertical-align: top;
+    }
+
+    .server-table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .server-table strong {
+      font-weight: 600;
+    }
+
+    .server-players-list {
+      margin: 6px 0 0;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .server-players-list span {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 2px 8px 3px;
+      border-radius: 999px;
+    }
+
+    .server-browser .status {
+      margin: 0;
+    }
+
     #modePanels {
       display: flex;
       flex-direction: column;
@@ -790,8 +898,14 @@ try {
         <div class="hero-brand">
           <img src="<?= htmlspecialchars($assetPrefix . '/logo.png', ENT_QUOTES); ?>" alt="Q3Rally Logo" onerror="this.style.display='none'">
           <div class="hero-info">
-            <h1 data-i18n-html="hero.title">Q3Rally Ladder Monitor <span class="badge-beta">beta</span></h1>
-            <p data-i18n-html="hero.description">Direkte Vorschau der besten Platzierungen je Spielmodus und Map. Wähle oben einen Modus und vergleiche die Top 10 pro Strecke – inklusive Levelshot-Vorschau.</p>
+            <div data-view-section="matches">
+              <h1 data-i18n-html="hero.title">Q3Rally Ladder Monitor <span class="badge-beta">beta</span></h1>
+              <p data-i18n-html="hero.description">Direkte Vorschau der besten Platzierungen je Spielmodus und Map. Wähle oben einen Modus und vergleiche die Top 10 pro Strecke – inklusive Levelshot-Vorschau.</p>
+            </div>
+            <div data-view-section="servers" hidden>
+              <h1 data-i18n-html="hero.servers.title">Q3Rally Serverbrowser <span class="badge-beta">beta</span></h1>
+              <p data-i18n-html="hero.servers.description">Durchsuche die Q3Rally Masterserver nach aktiven Gameservern und sieh dir Spieler, Map und Modus direkt im Browser an.</p>
+            </div>
           </div>
         </div>
           <div class="hero-actions">
@@ -805,22 +919,54 @@ try {
 
     </section>
 
-    <section class="panel tabbed-panel">
+    <section class="panel tabbed-panel" data-view-section="matches">
       <div class="tab-header" id="modeTabs" role="tablist" aria-label="Spielmodi" data-i18n-aria-label="tabs.label"></div>
       <p class="status" id="modeStatus"></p>
       <div id="modePanels" class="mode-panels"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-view-section="matches">
 
       <h2 style="margin:0; font-size:1.05rem; letter-spacing:0.02em; text-transform:uppercase; color:var(--text-muted);" data-i18n="breakdown.heading">Modus-Verteilung</h2>
 
       <ul id="modeBreakdown"></ul>
     </section>
+
+    <section class="panel server-browser" id="serverBrowser" data-view-section="servers" hidden>
+      <div class="server-browser-header">
+        <div class="server-browser-headline">
+          <h2 data-i18n="servers.heading">Serverbrowser</h2>
+          <p class="status" id="serverStatus"></p>
+        </div>
+        <div class="server-browser-actions">
+          <button type="button" id="serverRefresh" data-i18n="servers.refresh">Aktualisieren</button>
+        </div>
+      </div>
+      <dl class="server-browser-stats" id="serverOverview"></dl>
+      <p class="empty-state" id="serverEmpty" hidden data-i18n="servers.empty">Keine Server gefunden.</p>
+      <div class="table-wrapper">
+        <table class="server-table">
+          <thead>
+            <tr>
+              <th scope="col" data-i18n="servers.table.headers.name">Server</th>
+              <th scope="col" data-i18n="servers.table.headers.map">Map</th>
+              <th scope="col" data-i18n="servers.table.headers.players">Spieler</th>
+              <th scope="col" data-i18n="servers.table.headers.game">Spiel/Mod</th>
+              <th scope="col" data-i18n="servers.table.headers.address">Adresse</th>
+              <th scope="col" data-i18n="servers.table.headers.sources">Master</th>
+            </tr>
+          </thead>
+          <tbody id="serverTable"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
 
   <script>
     const API_BASE = <?= json_encode($apiBase, JSON_UNESCAPED_SLASHES); ?>;
+
+    const SERVER_PROTOCOL = 71;
+    const SERVER_REFRESH_MIN_INTERVAL = 30_000;
 
     const MODE_CONFIG = [
       { key: 'gt_racing', type: 'race' },
@@ -979,6 +1125,31 @@ try {
         'matches.players.heading': 'Spieler ({count})',
         'matches.players.empty': 'Keine Spielerinformationen vorhanden.',
         'matches.status.error': 'Fehler beim Laden: {message}',
+        'hero.servers.title': 'Q3Rally Serverbrowser <span class="badge-beta">beta</span>',
+        'hero.servers.description': 'Durchsuche die Q3Rally Masterserver nach aktiven Gameservern und sieh dir Spieler, Map und Modus direkt im Browser an.',
+        'servers.heading': 'Serverbrowser',
+        'servers.refresh': 'Aktualisieren',
+        'servers.empty': 'Keine Server gefunden.',
+        'servers.status.loading': 'Lade Serverliste…',
+        'servers.status.error': 'Fehler beim Laden: {message}',
+        'servers.status.empty': 'Keine Server mit dem aktuellen Protokoll gefunden.',
+        'servers.status.count': 'Zeige {count} von {total} Servern.',
+        'servers.table.headers.name': 'Server',
+        'servers.table.headers.map': 'Map',
+        'servers.table.headers.players': 'Spieler',
+        'servers.table.headers.game': 'Spiel/Mod',
+        'servers.table.headers.address': 'Adresse',
+        'servers.table.headers.sources': 'Master',
+        'servers.player.ping': 'Ping: {ping}',
+        'servers.player.score': 'Score: {score}',
+        'servers.unknown': 'Unbekannt',
+        'servers.unknownMap': 'Unbekannte Map',
+        'servers.gametype.value': 'Gametype {value}',
+        'servers.overview.total': 'Gesamtserver',
+        'servers.overview.protocol': 'Protokoll',
+        'servers.overview.masterFallback': 'Masterserver',
+        'servers.master.count': '{count} Server',
+        'servers.master.error': 'Fehler: {message}',
         'errors.unexpectedResponse': 'Unerwartete Antwort des Servers.',
         'breakdown.heading': 'Modus-Verteilung',
         'breakdown.empty': 'Keine Daten vorhanden.',
@@ -1132,6 +1303,31 @@ try {
         'matches.players.heading': 'Players ({count})',
         'matches.players.empty': 'No player information available.',
         'matches.status.error': 'Load error: {message}',
+        'hero.servers.title': 'Q3Rally Server Browser <span class="badge-beta">beta</span>',
+        'hero.servers.description': 'Browse the Q3Rally master servers for active game servers and inspect players, map, and mode right in your browser.',
+        'servers.heading': 'Server Browser',
+        'servers.refresh': 'Refresh',
+        'servers.empty': 'No servers found.',
+        'servers.status.loading': 'Loading servers…',
+        'servers.status.error': 'Load error: {message}',
+        'servers.status.empty': 'No servers found for the selected protocol.',
+        'servers.status.count': 'Showing {count} of {total} servers.',
+        'servers.table.headers.name': 'Server',
+        'servers.table.headers.map': 'Map',
+        'servers.table.headers.players': 'Players',
+        'servers.table.headers.game': 'Game/Mod',
+        'servers.table.headers.address': 'Address',
+        'servers.table.headers.sources': 'Masters',
+        'servers.player.ping': 'Ping: {ping}',
+        'servers.player.score': 'Score: {score}',
+        'servers.unknown': 'Unknown',
+        'servers.unknownMap': 'Unknown map',
+        'servers.gametype.value': 'Gametype {value}',
+        'servers.overview.total': 'Total servers',
+        'servers.overview.protocol': 'Protocol',
+        'servers.overview.masterFallback': 'Master server',
+        'servers.master.count': '{count} servers',
+        'servers.master.error': 'Error: {message}',
         'errors.unexpectedResponse': 'Unexpected server response.',
         'breakdown.heading': 'Mode distribution',
         'breakdown.empty': 'No data available.',
@@ -1284,8 +1480,21 @@ const state = {
   selectedMaps: new Map(),
   mapMetadata: new Map(),
   activeMode: MODE_CONFIG.length ? MODE_CONFIG[0].key : 'gt_racing',
+  activeView: 'matches',
   language: 'en',
-  modeStatus: { key: null, params: {}, isError: false }
+  modeStatus: { key: null, params: {}, isError: false },
+  serverBrowser: {
+    isLoading: false,
+    error: null,
+    servers: [],
+    totalServers: 0,
+    totalPlayers: 0,
+    masters: [],
+    lastUpdated: null,
+    protocol: SERVER_PROTOCOL,
+    lastFetch: 0,
+    abortController: null
+  }
 };
 
 const elements = {
@@ -1294,8 +1503,19 @@ const elements = {
   modeStatus: document.getElementById('modeStatus'),
   modeBreakdown: document.getElementById('modeBreakdown'),
   languageButtons: Array.from(document.querySelectorAll('.language-button')),
+  navLinks: Array.from(document.querySelectorAll('.nav-link[data-view]')),
+  viewSections: Array.from(document.querySelectorAll('[data-view-section]')),
   html: document.documentElement,
-  metaDescription: document.querySelector('meta[name="description"]')
+  metaDescription: document.querySelector('meta[name="description"]'),
+  serverPanel: document.getElementById('serverBrowser'),
+  serverStatus: document.getElementById('serverStatus'),
+  serverTable: document.getElementById('serverTable'),
+  serverEmpty: document.getElementById('serverEmpty'),
+  serverRefresh: document.getElementById('serverRefresh'),
+  serverOverview: document.getElementById('serverOverview'),
+  serverStatTotal: document.getElementById('server-stat-total'),
+  serverStatPlayers: document.getElementById('server-stat-players'),
+  serverStatUpdated: document.getElementById('server-stat-updated')
 };
 
 const modeElements = new Map();
@@ -1494,6 +1714,364 @@ function createFormatter(lang = state.language) {
   });
 }
 
+function updateViewVisibility() {
+  elements.viewSections.forEach((element) => {
+    const targets = (element.dataset.viewSection || '')
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+    const visible = !targets.length || targets.includes(state.activeView);
+    element.hidden = !visible;
+  });
+  elements.navLinks.forEach((link) => {
+    const isActive = link.dataset.view === state.activeView;
+    link.classList.toggle('active', isActive);
+    if (isActive) {
+      link.setAttribute('aria-current', 'page');
+      link.setAttribute('aria-pressed', 'true');
+    } else {
+      link.removeAttribute('aria-current');
+      link.setAttribute('aria-pressed', 'false');
+    }
+  });
+}
+
+function updateServerHeroStats() {
+  if (!elements.serverStatTotal || !elements.serverStatPlayers || !elements.serverStatUpdated) {
+    return;
+  }
+  elements.serverStatTotal.textContent = state.serverBrowser.totalServers
+    ? state.serverBrowser.totalServers.toString()
+    : '–';
+  elements.serverStatPlayers.textContent = state.serverBrowser.totalPlayers
+    ? state.serverBrowser.totalPlayers.toString()
+    : '–';
+  const timestamp = state.serverBrowser.lastUpdated;
+  elements.serverStatUpdated.textContent = timestamp instanceof Date && !Number.isNaN(timestamp.getTime())
+    ? formatter.format(timestamp)
+    : '–';
+}
+
+function sanitizeServerPlayer(player) {
+  if (!player || typeof player !== 'object') {
+    return null;
+  }
+  const name = typeof player.name === 'string' ? player.name.trim() : '';
+  if (!name) {
+    return null;
+  }
+  const pingValue = Number(player.ping);
+  const scoreValue = Number(player.score);
+  return {
+    name,
+    ping: Number.isFinite(pingValue) ? pingValue : null,
+    score: Number.isFinite(scoreValue) ? scoreValue : null
+  };
+}
+
+function sanitizeServerPayload(server) {
+  if (!server || typeof server !== 'object') {
+    return null;
+  }
+  const address = typeof server.address === 'string' ? server.address.trim() : '';
+  if (!address) {
+    return null;
+  }
+  const hostname = typeof server.hostname === 'string' ? server.hostname.trim() : '';
+  const map = typeof server.map === 'string' ? server.map.trim() : '';
+  const gamename = typeof server.gamename === 'string' ? server.gamename.trim() : '';
+  const mode = typeof server.mode === 'string' ? server.mode.trim() : '';
+  const mod = typeof server.mod === 'string' ? server.mod.trim() : '';
+  const protocolValue = Number(server.protocol);
+  const gametypeValue = Number(server.gametype);
+  const sources = Array.isArray(server.sources)
+    ? server.sources
+        .map((source) => (typeof source === 'string' ? source.trim() : ''))
+        .filter(Boolean)
+    : [];
+  const players = Array.isArray(server.players)
+    ? server.players.map(sanitizeServerPlayer).filter(Boolean)
+    : [];
+  const numPlayersValue = Number(server.numPlayers);
+  const maxPlayersValue = Number(server.maxPlayers);
+  const updatedAt = parseDate(server.updatedAt ?? server.statusAt ?? server.recordedAt);
+  return {
+    address,
+    hostname: hostname || null,
+    map: map || null,
+    gamename: gamename || null,
+    mode: mode || null,
+    mod: mod || null,
+    protocol: Number.isFinite(protocolValue) ? protocolValue : null,
+    gametype: Number.isFinite(gametypeValue) ? gametypeValue : null,
+    numPlayers: Number.isFinite(numPlayersValue) && numPlayersValue >= 0 ? numPlayersValue : players.length,
+    maxPlayers: Number.isFinite(maxPlayersValue) && maxPlayersValue > 0 ? maxPlayersValue : null,
+    players,
+    sources,
+    updatedAt: updatedAt instanceof Date && !Number.isNaN(updatedAt.getTime()) ? updatedAt : null
+  };
+}
+
+function renderServerOverview() {
+  if (!elements.serverOverview) {
+    return;
+  }
+  elements.serverOverview.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  const totalWrapper = document.createElement('div');
+  const totalLabel = document.createElement('dt');
+  totalLabel.textContent = t('servers.overview.total');
+  const totalValue = document.createElement('dd');
+  totalValue.textContent = state.serverBrowser.totalServers
+    ? state.serverBrowser.totalServers.toString()
+    : '0';
+  totalWrapper.appendChild(totalLabel);
+  totalWrapper.appendChild(totalValue);
+  fragment.appendChild(totalWrapper);
+
+  const protocolWrapper = document.createElement('div');
+  const protocolLabel = document.createElement('dt');
+  protocolLabel.textContent = t('servers.overview.protocol');
+  const protocolValue = document.createElement('dd');
+  protocolValue.textContent = state.serverBrowser.protocol
+    ? state.serverBrowser.protocol.toString()
+    : SERVER_PROTOCOL.toString();
+  protocolWrapper.appendChild(protocolLabel);
+  protocolWrapper.appendChild(protocolValue);
+  fragment.appendChild(protocolWrapper);
+
+  state.serverBrowser.masters.forEach((master) => {
+    const wrapper = document.createElement('div');
+    const label = document.createElement('dt');
+    label.textContent = master.label || master.host || t('servers.overview.masterFallback');
+    const value = document.createElement('dd');
+    if (master.error) {
+      value.textContent = t('servers.master.error', { message: master.error });
+      value.classList.add('error');
+    } else {
+      const count = typeof master.count === 'number' && master.count >= 0 ? master.count : 0;
+      value.textContent = t('servers.master.count', { count });
+    }
+    wrapper.appendChild(label);
+    wrapper.appendChild(value);
+    fragment.appendChild(wrapper);
+  });
+
+  elements.serverOverview.appendChild(fragment);
+}
+
+function renderServerBrowser() {
+  if (!elements.serverTable || !elements.serverStatus) {
+    return;
+  }
+  const status = elements.serverStatus;
+  const { isLoading, error, servers } = state.serverBrowser;
+  status.classList.toggle('error', Boolean(error));
+  if (isLoading) {
+    status.textContent = t('servers.status.loading');
+  } else if (error) {
+    status.textContent = t('servers.status.error', { message: error.message || String(error) });
+  } else if (!servers.length) {
+    status.textContent = t('servers.status.empty');
+  } else {
+    status.textContent = t('servers.status.count', {
+      count: servers.length,
+      total: state.serverBrowser.totalServers || servers.length
+    });
+  }
+  if (elements.serverEmpty) {
+    elements.serverEmpty.hidden = Boolean(isLoading || error || servers.length);
+  }
+  elements.serverTable.innerHTML = '';
+  if (servers.length) {
+    const sorted = [...servers].sort((a, b) => {
+      const left = Number.isFinite(a.numPlayers) ? a.numPlayers : 0;
+      const right = Number.isFinite(b.numPlayers) ? b.numPlayers : 0;
+      return right - left;
+    });
+    sorted.forEach((server) => {
+      const row = document.createElement('tr');
+
+      const nameCell = document.createElement('td');
+      nameCell.textContent = server.hostname || t('servers.unknown');
+      row.appendChild(nameCell);
+
+      const mapCell = document.createElement('td');
+      mapCell.textContent = server.map || t('servers.unknownMap');
+      row.appendChild(mapCell);
+
+      const playersCell = document.createElement('td');
+      const playerCount = Number.isFinite(server.numPlayers) ? server.numPlayers : 0;
+      const strong = document.createElement('strong');
+      if (Number.isFinite(server.maxPlayers) && server.maxPlayers) {
+        strong.textContent = `${playerCount} / ${server.maxPlayers}`;
+      } else {
+        strong.textContent = `${playerCount}`;
+      }
+      playersCell.appendChild(strong);
+      if (server.players.length) {
+        const list = document.createElement('div');
+        list.className = 'server-players-list';
+        server.players.forEach((player) => {
+          const badge = document.createElement('span');
+          badge.textContent = player.name;
+          if (Number.isFinite(player.ping) || Number.isFinite(player.score)) {
+            const pingPart = Number.isFinite(player.ping) ? t('servers.player.ping', { ping: player.ping }) : '';
+            const scorePart = Number.isFinite(player.score) ? t('servers.player.score', { score: player.score }) : '';
+            const meta = [pingPart, scorePart].filter(Boolean).join(' · ');
+            if (meta) {
+              badge.title = meta;
+            }
+          }
+          list.appendChild(badge);
+        });
+        playersCell.appendChild(list);
+      }
+      row.appendChild(playersCell);
+
+      const gameCell = document.createElement('td');
+      const metaParts = [];
+      if (server.gamename) {
+        metaParts.push(server.gamename);
+      }
+      if (server.mode) {
+        metaParts.push(server.mode);
+      } else if (Number.isFinite(server.gametype)) {
+        metaParts.push(t('servers.gametype.value', { value: server.gametype }));
+      }
+      if (server.mod) {
+        metaParts.push(server.mod);
+      }
+      gameCell.textContent = metaParts.length ? metaParts.join(' · ') : t('servers.unknown');
+      row.appendChild(gameCell);
+
+      const addressCell = document.createElement('td');
+      addressCell.textContent = server.address;
+      row.appendChild(addressCell);
+
+      const sourcesCell = document.createElement('td');
+      sourcesCell.textContent = server.sources.length
+        ? server.sources.join(', ')
+        : t('servers.unknown');
+      row.appendChild(sourcesCell);
+
+      elements.serverTable.appendChild(row);
+    });
+  }
+  updateServerHeroStats();
+  renderServerOverview();
+}
+
+function setActiveView(view) {
+  if (view !== 'matches' && view !== 'servers') {
+    return;
+  }
+  if (state.activeView === view) {
+    return;
+  }
+  state.activeView = view;
+  updateViewVisibility();
+  if (view === 'servers') {
+    ensureServersLoaded();
+  }
+}
+
+function ensureServersLoaded(force = false) {
+  if (force) {
+    loadServers(true);
+    return;
+  }
+  if (!state.serverBrowser.servers.length) {
+    loadServers();
+    return;
+  }
+  const lastFetch = state.serverBrowser.lastFetch;
+  const now = Date.now();
+  if (now - lastFetch > SERVER_REFRESH_MIN_INTERVAL * 2) {
+    loadServers();
+  }
+}
+
+async function loadServers(force = false) {
+  if (state.serverBrowser.isLoading && !force) {
+    return;
+  }
+  const now = Date.now();
+  if (!force && now - state.serverBrowser.lastFetch < SERVER_REFRESH_MIN_INTERVAL) {
+    return;
+  }
+  if (state.serverBrowser.abortController) {
+    try {
+      state.serverBrowser.abortController.abort();
+    } catch (abortError) {
+      console.warn(abortError);
+    }
+  }
+  let controller = null;
+  if (typeof AbortController !== 'undefined') {
+    controller = new AbortController();
+    state.serverBrowser.abortController = controller;
+  }
+  state.serverBrowser.isLoading = true;
+  state.serverBrowser.error = null;
+  renderServerBrowser();
+  try {
+    const url = `${API_BASE}/servers?protocol=${encodeURIComponent(state.serverBrowser.protocol || SERVER_PROTOCOL)}`;
+    const response = await fetch(url, controller ? { signal: controller.signal } : undefined);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const payload = await response.json();
+    const servers = Array.isArray(payload.servers)
+      ? payload.servers.map(sanitizeServerPayload).filter(Boolean)
+      : [];
+    state.serverBrowser.servers = servers;
+    const totalServers = Number(payload.total);
+    state.serverBrowser.totalServers = Number.isFinite(totalServers)
+      ? totalServers
+      : servers.length;
+    state.serverBrowser.totalPlayers = servers.reduce((sum, server) => {
+      const value = Number.isFinite(server.numPlayers) ? server.numPlayers : 0;
+      return sum + value;
+    }, 0);
+    const protocolValue = Number(payload.protocol);
+    state.serverBrowser.protocol = Number.isFinite(protocolValue)
+      ? protocolValue
+      : SERVER_PROTOCOL;
+    const generatedAt = parseDate(payload.generatedAt);
+    state.serverBrowser.lastUpdated = generatedAt instanceof Date && !Number.isNaN(generatedAt.getTime())
+      ? generatedAt
+      : new Date();
+    state.serverBrowser.lastFetch = now;
+    state.serverBrowser.masters = Array.isArray(payload.masters)
+      ? payload.masters.map((master) => {
+          const host = typeof master.host === 'string' ? master.host : '';
+          const label = typeof master.label === 'string' && master.label.trim() ? master.label.trim() : host;
+          const count = Number(master.count);
+          const errorMessage = typeof master.error === 'string' ? master.error.trim() : '';
+          return {
+            host,
+            label,
+            count: Number.isFinite(count) && count >= 0 ? count : 0,
+            error: errorMessage || null
+          };
+        })
+      : [];
+    state.serverBrowser.error = null;
+  } catch (error) {
+    if (error && error.name === 'AbortError') {
+      return;
+    }
+    console.error(error);
+    state.serverBrowser.error = error instanceof Error ? error : new Error(String(error));
+  } finally {
+    state.serverBrowser.lastFetch = now;
+    state.serverBrowser.isLoading = false;
+    state.serverBrowser.abortController = null;
+    renderServerBrowser();
+  }
+}
+
 let formatter = createFormatter();
 
 function translateWithFallback(key, lang = state.language) {
@@ -1595,6 +2173,9 @@ function applyLanguage(lang) {
   if (state.modeStatus.key) {
     setModeStatus(state.modeStatus.key, state.modeStatus.params, state.modeStatus.isError, false);
   }
+  renderServerBrowser();
+  updateServerHeroStats();
+  updateViewVisibility();
 }
 
 function createModeTabs() {
@@ -3483,6 +4064,15 @@ function parseDate(value) {
 createModeTabs();
 applyLanguage(state.language);
 setActiveMode(state.activeMode);
+elements.navLinks.forEach((link) => {
+  link.addEventListener('click', (event) => {
+    event.preventDefault();
+    const view = link.dataset.view;
+    if (view) {
+      setActiveView(view);
+    }
+  });
+});
 elements.languageButtons.forEach((button) => {
   button.addEventListener('click', () => {
     const lang = button.dataset.lang;
@@ -3491,6 +4081,11 @@ elements.languageButtons.forEach((button) => {
     }
   });
 });
+if (elements.serverRefresh) {
+  elements.serverRefresh.addEventListener('click', () => {
+    ensureServersLoaded(true);
+  });
+}
 loadMatches();
 
   </script>
@@ -3650,16 +4245,12 @@ function handle_get(array $segments): void
     send_error(404, 'Endpoint not found.');
 }
 
-function handle_delete(array $segments): void
+function collect_master_server_data(int $protocol, ?int $statusLimit = null): array
 {
-    if (count($segments) !== 2 || $segments[0] !== 'matches') {
-        send_error(404, 'Endpoint not found.');
-    }
-
-    $matchId = normalize_match_id($segments[1]);
-    $matchPath = DATA_DIR . '/' . $matchId . '.json';
-    if (!file_exists($matchPath)) {
-        send_error(404, 'Match not found.');
+    $protocol = max(0, $protocol);
+    $statusCap = SERVER_STATUS_MAX;
+    if ($statusLimit !== null) {
+        $statusCap = max(1, min($statusLimit, SERVER_STATUS_MAX));
     }
 
     if (!unlink($matchPath)) {
@@ -3837,11 +4428,119 @@ function normalize_map_key(string $raw): string
     return trim((string) $normalized, '_');
 }
 
+function attempt_json_encode($payload, int $options, ?string &$error = null)
+{
+    try {
+        $json = json_encode($payload, $options);
+        if ($json === false) {
+            $error = function_exists('json_last_error_msg') ? json_last_error_msg() : 'json_encode failed.';
+        }
+
+        return $json;
+    } catch (Throwable $encodeError) {
+        $class = get_class($encodeError);
+        if ($class === 'JsonException') {
+            $error = $encodeError->getMessage();
+
+            return false;
+        }
+
+        throw $encodeError;
+    }
+}
+
+function sanitize_json_data($value)
+{
+    if (is_array($value)) {
+        $result = [];
+        foreach ($value as $key => $item) {
+            $result[$key] = sanitize_json_data($item);
+        }
+
+        return $result;
+    }
+
+    if (is_object($value)) {
+        $result = [];
+        foreach (get_object_vars($value) as $key => $item) {
+            $result[$key] = sanitize_json_data($item);
+        }
+
+        return $result;
+    }
+
+    if (is_string($value)) {
+        return ensure_utf8_string($value);
+    }
+
+    return $value;
+}
+
+function ensure_utf8_string(string $value): string
+{
+    if ($value === '') {
+        return '';
+    }
+
+    if (@preg_match('//u', $value) === 1) {
+        return $value;
+    }
+
+    $candidates = [];
+    if (function_exists('iconv')) {
+        $candidates[] = @iconv('UTF-8', 'UTF-8//IGNORE', $value);
+        $candidates[] = @iconv('ISO-8859-1', 'UTF-8//IGNORE', $value);
+    }
+    if (function_exists('mb_convert_encoding')) {
+        $candidates[] = @mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+        $candidates[] = @mb_convert_encoding($value, 'UTF-8', 'ISO-8859-1');
+    }
+
+    foreach ($candidates as $candidate) {
+        if (is_string($candidate) && $candidate !== '') {
+            return $candidate;
+        }
+    }
+
+    $stripped = preg_replace('/[\x00-\x1F\x7F-\x9F]/', '', $value);
+    if ($stripped === null) {
+        return '';
+    }
+
+    if (@preg_match('//u', $stripped) === 1) {
+        return $stripped;
+    }
+
+    return '';
+}
+
 function send_json(array $payload, int $statusCode): void
 {
     http_response_code($statusCode);
     header('Content-Type: application/json');
-    echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+    $options = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+    $error = null;
+    $json = attempt_json_encode($payload, $options, $error);
+    if ($json === false) {
+        if ($error !== null) {
+            error_log('JSON encode failed: ' . $error);
+        }
+        $sanitized = sanitize_json_data($payload);
+        $json = attempt_json_encode($sanitized, $options | JSON_PARTIAL_OUTPUT_ON_ERROR, $error);
+        if ($json === false) {
+            if ($error !== null) {
+                error_log('JSON encode retry failed: ' . $error);
+            }
+            $fallback = ['error' => 'Failed to encode response'];
+            $json = attempt_json_encode($fallback, $options | JSON_PARTIAL_OUTPUT_ON_ERROR, $error);
+            if ($json === false || $json === null) {
+                $json = '{"error":"Failed to encode response"}';
+            }
+        }
+    }
+
+    echo $json;
     exit;
 }
 
