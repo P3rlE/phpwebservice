@@ -25,9 +25,6 @@ if ($script !== '' && strpos($normalized, $script) === 0) {
     $normalized = substr($normalized, strlen($script));
 }
 $normalized = trim($normalized, '/');
-if (substr($normalized, -5) === '.json') {
-    $normalized = substr($normalized, 0, -5);
-}
 
 // --- Minimal frontend for Q3Rally Ladder (HTML landing page) ---
 try {
@@ -3623,10 +3620,31 @@ loadMatches();
 // --- End frontend ---
 
 
-try {
+<<<<<<< HEAD
     $pathInfo = $normalized;
     $path = trim($pathInfo, '/');
     $segments = $path === '' ? [] : explode('/', $path);
+=======
+$pathInfo = $_SERVER['PATH_INFO'] ?? '';
+if ($pathInfo === '' && isset($_SERVER['REQUEST_URI'])) {
+    $requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '';
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+
+    if ($scriptName !== '' && strpos($requestPath, $scriptName) === 0) {
+        $pathInfo = substr($requestPath, strlen($scriptName));
+    } else {
+        $scriptDir = $scriptName !== '' ? rtrim(dirname($scriptName), '/\\') : '';
+        if ($scriptDir !== '' && strpos($requestPath, $scriptDir) === 0) {
+            $pathInfo = substr($requestPath, strlen($scriptDir));
+        } else {
+            $pathInfo = $requestPath;
+        }
+    }
+}
+
+$path = trim($pathInfo, '/');
+$segments = $path === '' ? [] : explode('/', $path);
+>>>>>>> 8fbe6eb9a9fb916a56751d6ecc65e288f150d2f3
 
     switch ($method) {
         case 'POST':
@@ -3644,9 +3662,7 @@ try {
 } catch (RuntimeException $e) {
     send_error(400, $e->getMessage());
 } catch (Throwable $e) {
-    // Fallback for any other error
-    error_log((string)$e);
-    send_error(500, 'Internal Server Error');
+    // if the frontend fails for any reason, continue with API logic
 }
 
 function handle_post(array $segments): void
