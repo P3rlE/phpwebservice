@@ -4960,7 +4960,8 @@ function strip_color_codes(string $value): string
     if ($result === null) {
         $result = $value;
     }
-    return trim($result);
+
+    return ensure_utf8_string(trim($result));
 }
 
 function handle_delete(array $segments): void
@@ -5384,11 +5385,119 @@ function normalize_map_key(string $raw): string
     return trim((string) $normalized, '_');
 }
 
+function attempt_json_encode($payload, int $options, ?string &$error = null)
+{
+    try {
+        $json = json_encode($payload, $options);
+        if ($json === false) {
+            $error = function_exists('json_last_error_msg') ? json_last_error_msg() : 'json_encode failed.';
+        }
+
+        return $json;
+    } catch (Throwable $encodeError) {
+        $class = get_class($encodeError);
+        if ($class === 'JsonException') {
+            $error = $encodeError->getMessage();
+
+            return false;
+        }
+
+        throw $encodeError;
+    }
+}
+
+function sanitize_json_data($value)
+{
+    if (is_array($value)) {
+        $result = [];
+        foreach ($value as $key => $item) {
+            $result[$key] = sanitize_json_data($item);
+        }
+
+        return $result;
+    }
+
+    if (is_object($value)) {
+        $result = [];
+        foreach (get_object_vars($value) as $key => $item) {
+            $result[$key] = sanitize_json_data($item);
+        }
+
+        return $result;
+    }
+
+    if (is_string($value)) {
+        return ensure_utf8_string($value);
+    }
+
+    return $value;
+}
+
+function ensure_utf8_string(string $value): string
+{
+    if ($value === '') {
+        return '';
+    }
+
+    if (@preg_match('//u', $value) === 1) {
+        return $value;
+    }
+
+    $candidates = [];
+    if (function_exists('iconv')) {
+        $candidates[] = @iconv('UTF-8', 'UTF-8//IGNORE', $value);
+        $candidates[] = @iconv('ISO-8859-1', 'UTF-8//IGNORE', $value);
+    }
+    if (function_exists('mb_convert_encoding')) {
+        $candidates[] = @mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+        $candidates[] = @mb_convert_encoding($value, 'UTF-8', 'ISO-8859-1');
+    }
+
+    foreach ($candidates as $candidate) {
+        if (is_string($candidate) && $candidate !== '') {
+            return $candidate;
+        }
+    }
+
+    $stripped = preg_replace('/[\x00-\x1F\x7F-\x9F]/', '', $value);
+    if ($stripped === null) {
+        return '';
+    }
+
+    if (@preg_match('//u', $stripped) === 1) {
+        return $stripped;
+    }
+
+    return '';
+}
+
 function send_json(array $payload, int $statusCode): void
 {
     http_response_code($statusCode);
     header('Content-Type: application/json');
-    echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+    $options = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+    $error = null;
+    $json = attempt_json_encode($payload, $options, $error);
+    if ($json === false) {
+        if ($error !== null) {
+            error_log('JSON encode failed: ' . $error);
+        }
+        $sanitized = sanitize_json_data($payload);
+        $json = attempt_json_encode($sanitized, $options | JSON_PARTIAL_OUTPUT_ON_ERROR, $error);
+        if ($json === false) {
+            if ($error !== null) {
+                error_log('JSON encode retry failed: ' . $error);
+            }
+            $fallback = ['error' => 'Failed to encode response'];
+            $json = attempt_json_encode($fallback, $options | JSON_PARTIAL_OUTPUT_ON_ERROR, $error);
+            if ($json === false || $json === null) {
+                $json = '{"error":"Failed to encode response"}';
+            }
+        }
+    }
+
+    echo $json;
     exit;
 }
 
