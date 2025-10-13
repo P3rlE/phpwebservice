@@ -206,39 +206,6 @@ try {
       background: rgba(93, 139, 255, 0.18);
     }
 
-    .hero-stats {
-      margin: 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      padding: 0;
-      list-style: none;
-    }
-
-    .hero-stats .stat {
-      min-width: 140px;
-      padding: 14px 18px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .hero-stats dt {
-      color: var(--text-muted);
-      font-weight: 500;
-      margin: 0;
-      font-size: 0.9rem;
-    }
-
-    .hero-stats dd {
-      margin: 0;
-      font-weight: 600;
-      font-size: 1.15rem;
-    }
-
     .controls {
       display: grid;
       gap: 18px;
@@ -912,15 +879,6 @@ try {
         align-self: center;
       }
 
-      .hero-stats {
-        justify-content: center;
-      }
-
-      .hero-stats .stat {
-
-        text-align: center;
-      }
-
       details.match summary {
         grid-template-columns: 1fr;
         text-align: left;
@@ -959,17 +917,6 @@ try {
         <p class="empty-state" id="leaderboardEmpty" hidden data-i18n="matches.empty">Keine Bestzeiten gefunden. Lade weitere Renn-Matches oder passe die Filter an.</p>
       </div>
 
-      <dl class="hero-stats" data-view-section="matches">
-        <div class="stat"><dt data-i18n="stats.matches">Matches</dt><dd id="stat-total">–</dd></div>
-        <div class="stat"><dt data-i18n="stats.lastUpdate">Letztes Update</dt><dd id="stat-last">–</dd></div>
-        <div class="stat"><dt data-i18n="stats.modes">Spielmodi</dt><dd id="stat-modes">–</dd></div>
-        <div class="stat"><dt data-i18n="stats.players">Spieler erfasst</dt><dd id="stat-players">–</dd></div>
-      </dl>
-      <dl class="hero-stats" data-view-section="servers" hidden>
-        <div class="stat"><dt data-i18n="servers.stats.servers">Server</dt><dd id="server-stat-total">–</dd></div>
-        <div class="stat"><dt data-i18n="servers.stats.players">Spieler online</dt><dd id="server-stat-players">–</dd></div>
-        <div class="stat"><dt data-i18n="servers.stats.updated">Stand</dt><dd id="server-stat-updated">–</dd></div>
-      </dl>
     </section>
 
     <section class="panel tabbed-panel" data-view-section="matches">
@@ -1056,13 +1003,6 @@ try {
         'tabs.elimination': 'ELIMINATION LEADERBOARD',
         'tabs.ctf': 'CTF LEADERBOARD',
         'tabs.matches': 'Matchübersicht',
-        'stats.matches': 'Matches',
-        'stats.lastUpdate': 'Letztes Update',
-        'stats.modes': 'Spielmodi',
-        'stats.players': 'Spieler erfasst',
-        'servers.stats.servers': 'Server',
-        'servers.stats.players': 'Spieler online',
-        'servers.stats.updated': 'Stand',
         'filters.leaderboard.mode.label': 'Spielmodus',
         'filters.leaderboard.mode.all': 'Alle Renn-Modi',
         'filters.leaderboard.map.label': 'Map',
@@ -1241,13 +1181,6 @@ try {
         'tabs.elimination': 'ELIMINATION LEADERBOARD',
         'tabs.ctf': 'CTF LEADERBOARD',
         'tabs.matches': 'Match overview',
-        'stats.matches': 'Matches',
-        'stats.lastUpdate': 'Last update',
-        'stats.modes': 'Game modes',
-        'stats.players': 'Players tracked',
-        'servers.stats.servers': 'Servers',
-        'servers.stats.players': 'Players online',
-        'servers.stats.updated': 'Updated',
         'filters.leaderboard.mode.label': 'Game mode',
         'filters.leaderboard.mode.all': 'All racing modes',
         'filters.leaderboard.map.label': 'Map',
@@ -1568,10 +1501,6 @@ const elements = {
   modeTabs: document.getElementById('modeTabs'),
   modePanels: document.getElementById('modePanels'),
   modeStatus: document.getElementById('modeStatus'),
-  statTotal: document.getElementById('stat-total'),
-  statLast: document.getElementById('stat-last'),
-  statModes: document.getElementById('stat-modes'),
-  statPlayers: document.getElementById('stat-players'),
   modeBreakdown: document.getElementById('modeBreakdown'),
   languageButtons: Array.from(document.querySelectorAll('.language-button')),
   navLinks: Array.from(document.querySelectorAll('.nav-link[data-view]')),
@@ -3284,20 +3213,6 @@ function prepareEliminationMetricContext(entries) {
 }
 
 function updateSummary() {
-  const total = state.allMatches.length;
-  elements.statTotal.textContent = total ? total.toString() : '–';
-  const modes = new Set(state.allMatches.map((match) => canonicalMode(extractMode(match))));
-  elements.statModes.textContent = modes.size ? modes.size.toString() : '–';
-  const lastDate = state.allMatches
-    .map((match) => extractStart(match))
-    .filter((date) => date instanceof Date && !Number.isNaN(date.getTime()))
-    .sort((a, b) => b.getTime() - a.getTime())[0];
-  elements.statLast.textContent = lastDate ? formatter.format(lastDate) : '–';
-  const playerSet = new Set();
-  state.allMatches.forEach((match) => {
-    extractPlayers(match).forEach((name) => playerSet.add(name));
-  });
-  elements.statPlayers.textContent = playerSet.size ? playerSet.size.toString() : '–';
   const breakdown = new Map();
   state.allMatches.forEach((match) => {
     const mode = extractMode(match);
@@ -4338,64 +4253,11 @@ function collect_master_server_data(int $protocol, ?int $statusLimit = null): ar
         $statusCap = max(1, min($statusLimit, SERVER_STATUS_MAX));
     }
 
-    $serverSources = [];
-    $masters = [];
-    foreach (MASTER_SERVERS as $definition) {
-        $host = $definition['host'] ?? null;
-        if (!is_string($host) || $host === '') {
-            continue;
-        }
-        $port = isset($definition['port']) ? (int) $definition['port'] : 27950;
-        $label = isset($definition['label']) && is_string($definition['label']) && trim($definition['label']) !== ''
-            ? trim($definition['label'])
-            : $host;
-        try {
-            $addresses = query_master_server_addresses($host, $port, $protocol, SERVER_STATUS_TIMEOUT);
-            $masters[] = [
-                'host' => $host,
-                'port' => $port,
-                'label' => $label,
-                'count' => count($addresses),
-            ];
-            foreach ($addresses as $address) {
-                if (!isset($serverSources[$address])) {
-                    $serverSources[$address] = [];
-                }
-                $serverSources[$address][] = $label;
-            }
-        } catch (Throwable $e) {
-            $masters[] = [
-                'host' => $host,
-                'port' => $port,
-                'label' => $label,
-                'count' => 0,
-                'error' => $e->getMessage(),
-            ];
-        }
+    if (!unlink($matchPath)) {
+        throw new RuntimeException('Failed to delete match.');
     }
 
-    $addresses = array_keys($serverSources);
-    sort($addresses, SORT_NATURAL);
-
-    $statusAddresses = $addresses;
-    if (count($statusAddresses) > $statusCap) {
-        $statusAddresses = array_slice($statusAddresses, 0, $statusCap);
-    }
-
-    $statusMap = fetch_server_statuses($statusAddresses, SERVER_STATUS_TIMEOUT);
-    $servers = [];
-    foreach ($addresses as $address) {
-        $status = $statusMap[$address] ?? null;
-        $servers[] = normalize_server_entry($address, $serverSources[$address] ?? [], $status);
-    }
-
-    return [
-        'protocol' => $protocol,
-        'generatedAt' => gmdate('c'),
-        'total' => count($addresses),
-        'masters' => $masters,
-        'servers' => $servers,
-    ];
+    http_response_code(204);
 }
 
 function load_arena_metadata(): array
