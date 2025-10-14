@@ -634,6 +634,42 @@ try {
       color: var(--text-muted);
     }
 
+    details.breakdown {
+      display: block;
+    }
+
+    details.breakdown summary {
+      list-style: none;
+      cursor: pointer;
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    details.breakdown summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.breakdown .chevron {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-right: 2px solid var(--text-muted);
+      border-bottom: 2px solid var(--text-muted);
+      transform: rotate(45deg);
+      transition: transform 150ms ease;
+    }
+
+    details.breakdown[open] .chevron {
+      transform: rotate(-135deg);
+    }
+
     #modeBreakdown {
       list-style: none;
       margin: 18px 0 0;
@@ -893,9 +929,14 @@ try {
 
     <section class="panel">
 
-      <h2 style="margin:0; font-size:1.05rem; letter-spacing:0.02em; text-transform:uppercase; color:var(--text-muted);" data-i18n="breakdown.heading">Modus-Verteilung</h2>
+      <details class="breakdown" id="modeBreakdownSection" open>
+        <summary>
+          <span data-i18n="breakdown.heading">Modus-Verteilung</span>
+          <span class="chevron" aria-hidden="true"></span>
+        </summary>
 
-      <ul id="modeBreakdown"></ul>
+        <ul id="modeBreakdown"></ul>
+      </details>
     </section>
   </main>
 
@@ -3682,7 +3723,15 @@ function handle_post(array $segments): void
 function handle_get(array $segments): void
 {
     if ($segments === ['maps', 'metadata']) {
-        $entries = load_arena_metadata();
+        $files = glob(ARENA_DIR . '/*.arena');
+        if ($files === false) {
+            $files = [];
+        }
+        sort($files, SORT_STRING);
+        $state = gather_files_state($files);
+        maybe_respond_not_modified($state['etag'], $state['lastModified'], 600);
+
+        $entries = load_arena_metadata($files);
         $normalized = [];
         foreach ($entries as $map => $longname) {
             if (!is_string($map) || !is_string($longname)) {
@@ -3701,12 +3750,21 @@ function handle_get(array $segments): void
 
         ksort($normalized, SORT_NATURAL | SORT_FLAG_CASE);
 
+        apply_cache_headers($state['etag'], $state['lastModified'], 600);
         send_json(['maps' => $normalized], 200);
         return;
     }
 
     if ($segments === ['matches']) {
-        $matches = load_all_matches();
+        $files = glob(DATA_DIR . '/*.json');
+        if ($files === false) {
+            $files = [];
+        }
+        sort($files, SORT_STRING);
+        $state = gather_files_state($files);
+        maybe_respond_not_modified($state['etag'], $state['lastModified'], 30);
+
+        $matches = load_all_matches($files);
         $mode = $_GET['mode'] ?? null;
         if (is_string($mode) && $mode !== '') {
             $matches = array_filter($matches, static function ($match) use ($mode) {
@@ -3729,6 +3787,7 @@ function handle_get(array $segments): void
             $slice = array_slice($matches, $offset, $limit);
         }
 
+        apply_cache_headers($state['etag'], $state['lastModified'], 30);
         send_json(['matches' => array_values($slice)], 200);
         return;
     }
@@ -3740,6 +3799,9 @@ function handle_get(array $segments): void
             send_error(404, 'Match not found.');
         }
 
+        $fileState = gather_files_state([$matchPath]);
+        maybe_respond_not_modified($fileState['etag'], $fileState['lastModified'], 120);
+
         $json = file_get_contents($matchPath);
         if ($json === false) {
             throw new RuntimeException('Failed to read match.');
@@ -3750,6 +3812,7 @@ function handle_get(array $segments): void
             throw new RuntimeException('Stored match is corrupted.');
         }
 
+        apply_cache_headers($fileState['etag'], $fileState['lastModified'], 120);
         send_json($payload, 200);
         return;
     }
@@ -3776,15 +3839,18 @@ function handle_delete(array $segments): void
     http_response_code(204);
 }
 
-function load_arena_metadata(): array
+function load_arena_metadata(?array $files = null): array
 {
     if (!is_dir(ARENA_DIR)) {
         return [];
     }
 
-    $files = glob(ARENA_DIR . '/*.arena');
-    if ($files === false) {
-        return [];
+    if ($files === null) {
+        $files = glob(ARENA_DIR . '/*.arena');
+        if ($files === false) {
+            return [];
+        }
+        sort($files, SORT_STRING);
     }
 
     $maps = [];
@@ -3905,11 +3971,14 @@ function extract_arena_value(string $block, string $key): ?string
     return null;
 }
 
-function load_all_matches(): array
+function load_all_matches(?array $files = null): array
 {
-    $files = glob(DATA_DIR . '/*.json');
-    if ($files === false) {
-        return [];
+    if ($files === null) {
+        $files = glob(DATA_DIR . '/*.json');
+        if ($files === false) {
+            return [];
+        }
+        sort($files, SORT_STRING);
     }
 
     $matches = [];
@@ -3955,5 +4024,73 @@ function send_json(array $payload, int $statusCode): void
 function send_error(int $statusCode, string $message): void
 {
     send_json(['error' => $message], $statusCode);
+}
+
+function gather_files_state(array $files): array
+{
+    if ($files === []) {
+        return ['etag' => null, 'lastModified' => null];
+    }
+
+    $parts = [];
+    $lastModified = 0;
+    foreach ($files as $file) {
+        $mtime = @filemtime($file);
+        $size = @filesize($file);
+        if (is_int($mtime) && $mtime > $lastModified) {
+            $lastModified = $mtime;
+        }
+        $parts[] = basename((string) $file) . ':' . ($mtime !== false ? $mtime : 0) . ':' . ($size !== false ? $size : 0);
+    }
+
+    sort($parts, SORT_STRING);
+    $etag = '"' . sha1(implode('|', $parts)) . '"';
+
+    return [
+        'etag' => $etag,
+        'lastModified' => $lastModified > 0 ? $lastModified : null,
+    ];
+}
+
+function format_http_date(int $timestamp): string
+{
+    return gmdate('D, d M Y H:i:s', $timestamp) . ' GMT';
+}
+
+function apply_cache_headers(?string $etag, ?int $lastModified, int $maxAge): void
+{
+    header('Cache-Control: public, max-age=' . $maxAge . ', must-revalidate');
+    if ($etag !== null) {
+        header('ETag: ' . $etag);
+    }
+    if ($lastModified !== null) {
+        header('Last-Modified: ' . format_http_date($lastModified));
+    }
+}
+
+function maybe_respond_not_modified(?string $etag, ?int $lastModified, int $maxAge): void
+{
+    $ifNoneMatch = $_SERVER['HTTP_IF_NONE_MATCH'] ?? null;
+    if ($etag !== null && is_string($ifNoneMatch) && $ifNoneMatch !== '') {
+        $providedEtags = array_map('trim', explode(',', $ifNoneMatch));
+        if (in_array('*', $providedEtags, true) || in_array($etag, $providedEtags, true)) {
+            send_not_modified($etag, $lastModified, $maxAge);
+        }
+    }
+
+    $ifModifiedSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? null;
+    if ($lastModified !== null && is_string($ifModifiedSince) && $ifModifiedSince !== '') {
+        $timestamp = strtotime($ifModifiedSince);
+        if ($timestamp !== false && $timestamp >= $lastModified) {
+            send_not_modified($etag, $lastModified, $maxAge);
+        }
+    }
+}
+
+function send_not_modified(?string $etag, ?int $lastModified, int $maxAge): void
+{
+    http_response_code(304);
+    apply_cache_headers($etag, $lastModified, $maxAge);
+    exit;
 }
 
