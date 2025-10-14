@@ -634,6 +634,42 @@ try {
       color: var(--text-muted);
     }
 
+    details.breakdown {
+      display: block;
+    }
+
+    details.breakdown summary {
+      list-style: none;
+      cursor: pointer;
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    details.breakdown summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.breakdown .chevron {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-right: 2px solid var(--text-muted);
+      border-bottom: 2px solid var(--text-muted);
+      transform: rotate(45deg);
+      transition: transform 150ms ease;
+    }
+
+    details.breakdown[open] .chevron {
+      transform: rotate(-135deg);
+    }
+
     #modeBreakdown {
       list-style: none;
       margin: 18px 0 0;
@@ -893,9 +929,14 @@ try {
 
     <section class="panel">
 
-      <h2 style="margin:0; font-size:1.05rem; letter-spacing:0.02em; text-transform:uppercase; color:var(--text-muted);" data-i18n="breakdown.heading">Modus-Verteilung</h2>
+      <details class="breakdown" id="modeBreakdownSection" open>
+        <summary>
+          <span data-i18n="breakdown.heading">Modus-Verteilung</span>
+          <span class="chevron" aria-hidden="true"></span>
+        </summary>
 
-      <ul id="modeBreakdown"></ul>
+        <ul id="modeBreakdown"></ul>
+      </details>
     </section>
   </main>
 
